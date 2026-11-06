@@ -1,0 +1,18 @@
+# Build output is never committed or packaged into .wsplugin.
+build/
+CMakeFiles/
+*.obj
+*.pdb
+*.ilk
+
+# bosskey.exe is a build artifact (CMake writes it to the source dir, because
+# plugin.json names it as runtime.program). It is distributed as a GitHub
+# release asset (.wsplugin / zip), not through git. A fresh clone rebuilds it
+# with CMake; see README. BossKeyApp.dll sits beside it (the same convention;
+# the host's Qt runs it).
+bosskey.exe
+BossKeyApp.dll
+
+dist/
+__pycache__/
+*.pyc

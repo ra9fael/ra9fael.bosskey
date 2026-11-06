@@ -1,0 +1,70 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LingCore/WinShun-plugins/main/schema/plugin.schema.json",
+  "manifest": 1,
+  "id": "ra9fael.bosskey",
+  "name": {"zh": "老板键", "en": "Boss Key"},
+  "version": "0.1.0",
+  "description": "boss 来了：一键全屏伪装成蓝屏 / Windows 更新 / gcc 编译现场；退出按键序列与自动消失时间可配置。",
+  "author": "ra9fael",
+  "license": "MIT",
+  "permissions": ["ui"],
+  "runtime": {
+    "mode": "resident",
+    "program": "bosskey.exe",
+    "sandbox": "strict",
+    "start": "eager",
+    "timeoutMs": 1500,
+    "memoryMB": 128,
+    "idleExitSec": 0,
+    "encoding": "utf-8"
+  },
+  "settings": [
+    {
+      "key": "sceneMap",
+      "type": "text",
+      "title": {"zh": "子触发词映射", "en": "Sub-trigger map"},
+      "hint": {"zh": "逗号分隔的 子词=场景，场景为 bsod/update/gcc；如 b=bsod,u=update,t=gcc", "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc, e.g. b=bsod,u=update,t=gcc"},
+      "default": "b=bsod,u=update,t=gcc"
+    },
+    {
+      "key": "exitSequence",
+      "type": "text",
+      "title": {"zh": "退出按键序列", "en": "Exit key sequence"},
+      "hint": {"zh": "伪装界面下直接键入该序列即退出（不区分大小写）；留空用默认 deadbeef", "en": "Type this sequence on the cover to exit (case-insensitive); empty uses the default deadbeef"},
+      "default": "deadbeef"
+    },
+    {
+      "key": "autoHideSec",
+      "type": "number",
+      "title": {"zh": "自动消失秒数", "en": "Auto-dismiss seconds"},
+      "hint": {"zh": "0 表示一直伪装到手动退出", "en": "0 keeps the cover until dismissed manually"},
+      "default": 0
+    },
+    {
+      "key": "gccProject",
+      "type": "text",
+      "title": {"zh": "gcc 场景项目名", "en": "gcc scene project name"},
+      "hint": {"zh": "编译输出里显示的目标名", "en": "The target name shown in the build output"},
+      "default": "winshun-core"
+    },
+    {
+      "key": "displayAll",
+      "type": "choice",
+      "title": {"zh": "显示器覆盖", "en": "Display coverage"},
+      "hint": {"zh": "mouse=只盖鼠标所在的屏幕，all=盖住所有显示器", "en": "mouse=cover only the screen with the mouse, all=cover every display"},
+      "default": "mouse",
+      "options": ["mouse", "all"]
+    }
+  ],
+  "commands": [
+    {
+      "id": "cover",
+      "keyword": ["boss", "摸鱼"],
+      "title": {"zh": "老板键伪装", "en": "Boss cover"},
+      "hint": {"zh": "b 蓝屏 · u 更新 · t 编译；Enter 全屏伪装，键入退出序列返回", "en": "b bluescreen · u update · t build; Enter covers the screen, type the exit sequence to return"},
+      "actions": [
+        {"id": "cover", "title": {"zh": "全屏伪装", "en": "Cover the screen"}, "key": "Enter"}
+      ]
+    }
+  ]
+}
