@@ -47,7 +47,7 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             color: "white"
             font.pixelSize: Math.round(root.height * 0.045)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
             text: root.cover.zh
                   ? "正在处理更新 " + root.cover.percent + "%"
                   : "Working on updates " + root.cover.percent + "%"
@@ -57,7 +57,7 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             color: "#CCE0F5"
             font.pixelSize: Math.round(root.height * 0.032)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
             text: root.cover.zh ? "请不要关闭电脑" : "Don't turn off your PC"
         }
     }
@@ -68,7 +68,7 @@ Rectangle {
         anchors.bottomMargin: root.height * 0.08
         color: "#8FB8E0"
         font.pixelSize: Math.round(root.height * 0.022)
-        font.family: "Segoe UI"
+        font.family: "Microsoft YaHei"
         text: root.cover.zh ? "你的电脑将多次重启" : "Your PC will restart several times"
     }
 }

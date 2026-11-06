@@ -31,14 +31,14 @@ Rectangle {
             text: ":("
             color: "white"
             font.pixelSize: Math.round(root.height * 0.16)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
         }
 
         Text {
             width: Math.min(root.width * 0.6, 720)
             color: "white"
             font.pixelSize: Math.round(root.height * 0.030)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
             wrapMode: Text.WordWrap
             text: root.cover.zh
                   ? "你的电脑遇到问题，需要重新启动。我们只收集某些错误信息，然后将为你重新启动。"
@@ -48,14 +48,14 @@ Rectangle {
         Text {
             color: "white"
             font.pixelSize: Math.round(root.height * 0.030)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
             text: root.cover.percent + "%"
         }
 
         Text {
             color: "white"
             font.pixelSize: Math.round(root.height * 0.024)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
             text: root.cover.zh ? "完成" : "complete"
         }
     }
@@ -93,7 +93,7 @@ Rectangle {
         Text {
             color: "white"
             font.pixelSize: Math.round(root.height * 0.020)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
             text: root.cover.zh
                   ? "有关此问题的详细信息和可能的修复方法，请访问 https://www.windows.com/stopcode"
                   : "For more information about this issue and possible fixes, visit https://www.windows.com/stopcode"
@@ -102,7 +102,7 @@ Rectangle {
         Text {
             color: "white"
             font.pixelSize: Math.round(root.height * 0.020)
-            font.family: "Segoe UI"
+            font.family: "Microsoft YaHei"
             text: root.cover.zh
                   ? "如果致电支持人员，请向他们提供以下信息：\n停止代码：" + root.stopCode + "\n失败的内容：" + root.whatFailed
                   : "If you call a support person, give them this info:\nStop code: " + root.stopCode + "\nWhat failed: " + root.whatFailed
