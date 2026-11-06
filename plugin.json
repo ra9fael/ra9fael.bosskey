@@ -14,7 +14,7 @@
     "sandbox": "strict",
     "start": "eager",
     "timeoutMs": 1500,
-    "memoryMB": 512,
+    "memoryMB": 128,
     "idleExitSec": 0,
     "encoding": "utf-8"
   },

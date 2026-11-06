@@ -59,10 +59,12 @@ extern "C" __declspec(dllexport) int winshunBossKeyMain(const wchar_t* appDirNam
 {
     const QString appDir = QString::fromWCharArray(appDirName);
     ::SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
-    // The host's renderer when the appearance says software (the strict
-    // sandbox); otherwise D3D11. BOSSKEY_RENDERER=software forces it for
-    // debugging.
-    const bool software = qEnvironmentVariable("BOSSKEY_RENDERER") == "software";
+    // Software rendering is the default: the covers are solid colors and text,
+    // which the raster engine draws just as well, and it keeps the process's
+    // commit at ~55 MB even with a fullscreen window per display — two D3D11
+    // swapchains plus texture atlases measured ~210 MB, past a 128 MB sandbox
+    // job limit. BOSSKEY_RENDERER=d3d11 puts the GPU back (debugging).
+    const bool software = qEnvironmentVariable("BOSSKEY_RENDERER") != "d3d11";
     prepareGui(appDir, software);
     int argc = 1;
     char name[] = "BossKey";
@@ -104,7 +106,7 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
             args.push_back(QString::fromWCharArray(wide[i]));
         ::LocalFree(wide);
     }
-    const bool software = qEnvironmentVariable("BOSSKEY_RENDERER") == "software";
+    const bool software = qEnvironmentVariable("BOSSKEY_RENDERER") != "d3d11";
     prepareGui(appDir, software);
     int argc = 1;
     char name[] = "BossKey";
@@ -112,7 +114,6 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     QGuiApplication app(argc, argv);
     startGui(software);
     QGuiApplication::setQuitOnLastWindowClosed(false);
-
     bosskey::precreateCover();
     QObject::connect(bosskey::coverController(), &bosskey::CoverController::exitRequested,
                      &app, [&app] {
