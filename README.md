@@ -31,7 +31,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 ## 安装
 
-需要已安装的 WinShun（插件复用它的 Qt 运行时，不含 Qt 依赖）。两种方式：
+需要 WinShun **0.22.0 或更新**（插件声明了宿主的共享 Qt 契约 `runtime.qt: "host"`，复用 WinShun 的 Qt 6.12，包内不含 Qt）。两种安装方式：
 
 - 双击 `dist/ra9fael.bosskey-0.1.0.wsplugin`，WinShun 会引导安装；
 - 或 WinShun 里「插件 → 从归档安装」。
@@ -61,7 +61,8 @@ python tools/package.py         # dist/ra9fael.bosskey-0.1.0.wsplugin
 ## 架构
 
 ```
-bosskey.exe      无 Qt 启动器：把 WinShun 目录加进 DLL 搜索路径，加载 BossKeyApp.dll
+bosskey.exe      无 Qt 启动器：从 WS_QT_DIR（共享 Qt 契约，0.22.0+）或 WS_APP_DIR 取 Qt 目录，
+                 加进 DLL 搜索路径后加载 BossKeyApp.dll
 BossKeyApp.dll   worker 线程跑 winshun.h SDK（JSON-RPC over stdio）
                  GUI 线程预创建每屏一个隐藏的 QML 全屏窗口，触发时只做 showFullScreen + raise
 logic.h          纯逻辑：场景映射、退出序列匹配、百分比节奏、gcc 日志生成（可单测）

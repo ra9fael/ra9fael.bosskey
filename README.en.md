@@ -31,7 +31,7 @@ The top-level keyword `boss` comes from plugin.json (a protocol limit — settin
 
 ## Install
 
-Requires an installed WinShun (the plugin reuses its Qt runtime; no Qt is bundled). Either way:
+Requires **WinShun 0.22.0 or later** (the plugin declares the host's shared-Qt contract, `runtime.qt: "host"`, and reuses WinShun's Qt 6.12; no Qt is bundled). Either way:
 
 - double-click `dist/ra9fael.bosskey-0.1.0.wsplugin` and WinShun walks you through it;
 - or in WinShun: Plugins → Install from archive.
@@ -61,7 +61,8 @@ The scenes can be checked without WinShun:
 ## Architecture
 
 ```
-bosskey.exe      Qt-less starter: adds WinShun's folder to the DLL search, loads BossKeyApp.dll
+bosskey.exe      Qt-less starter: takes the Qt folder from WS_QT_DIR (shared-Qt contract, 0.22.0+)
+                 or WS_APP_DIR, adds it to the DLL search, loads BossKeyApp.dll
 BossKeyApp.dll   worker thread runs the winshun.h SDK (JSON-RPC over stdio)
                  the GUI thread precreates one hidden fullscreen QML window per screen;
                  showing one is showFullScreen + raise

@@ -11,8 +11,10 @@
 // WinShun and no protocol — how the scenes are checked. --autohide closes it
 // after the seconds (the verify scripts' chance to screenshot and leave).
 //
-// The runtime setup mirrors WinShun's winshun.capture (src/capture-plugin/
-// PluginMain.cpp): WinShun's Qt, the renderer the host is using.
+// The runtime setup follows WinShun's shared-Qt contract (plugin.json declares
+// runtime.qt = "host"): the host sets WS_QT_DIR, the starter passes that folder
+// here, and Qt's library paths point there. The covers render on the software
+// rasterizer (see startGui).
 
 #include "BossQml.h"
 #include "../logic.h"
