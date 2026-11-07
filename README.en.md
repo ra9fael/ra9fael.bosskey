@@ -29,6 +29,10 @@ Press Enter to trigger the fullscreen cover; while covered, every keystroke is s
 
 The top-level keyword `boss` comes from plugin.json (a protocol limit — settings cannot change it); the sub-tokens, exit sequence, and timeout are all in settings.
 
+## Permissions
+
+It asks for `ui` only: creating fullscreen windows and taking focus. No network, no file access, no subprocesses, no clipboard.
+
 ## Install
 
 Requires **WinShun 0.22.0 or later** (the plugin declares the host's shared-Qt contract, `runtime.qt: "host"`, and reuses WinShun's Qt 6.12; no Qt is bundled). Either way:
