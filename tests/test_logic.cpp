@@ -1,8 +1,11 @@
 // test_logic.cpp - the pure logic of Boss Key (logic.h): the scene map, the
-// exit-sequence matcher, the percent pacing, the gcc log. No Qt, no windows.
+// exit-sequence matcher, the percent pacing, the gcc log; and the QR encoder
+// (qrcode.h). No Qt, no windows.
 #include "logic.h"
+#include "qrcode.h"
 
 #include <cstdio>
+#include <cstdlib>
 
 namespace {
 
@@ -164,6 +167,74 @@ void testGccLog()
     expect(bosskey::gccLog("", 7).size() > 20, "gcc: empty project still builds");
 }
 
+// ---- the QR code -------------------------------------------------------------
+
+namespace {
+
+char cellAt(const std::string& rows, int row, int col)
+{
+    return rows[static_cast<std::size_t>(row) * (bosskey::qr::kSize + 1) + col];
+}
+
+} // namespace
+
+void testQr()
+{
+    using namespace bosskey::qr;
+
+    const std::string url = "https://www.windows.com/stopcode";
+    const Code code = encode(url);
+    expect(code.ok, "qr: the stopcode URL fits");
+    expect(code.size == 29, "qr: version 3 is 29 modules");
+    expect(code.rows.size() == 29 * 30 - 1, "qr: 29 rows of 29 joined by newlines");
+
+    // The three finder patterns: a 7x7 ring around a 3x3 core, white
+    // separators outside. These are what makes it read as a QR code at a
+    // glance, so they are the first thing to pin down.
+    for (const auto& [top, left] : {std::pair{0, 0}, std::pair{0, 22}, std::pair{22, 0}}) {
+        expect(cellAt(code.rows, top + 0, left + 0) == '1', "qr: finder outer ring");
+        expect(cellAt(code.rows, top + 1, left + 1) == '0', "qr: finder white ring");
+        expect(cellAt(code.rows, top + 2, left + 2) == '1', "qr: finder core");
+        expect(cellAt(code.rows, top + 3, left + 3) == '1', "qr: finder core filled");
+        expect(cellAt(code.rows, top + 6, left + 6) == '1', "qr: finder outer corner");
+    }
+    // The separators sit on the inner sides of the three corners.
+    expect(cellAt(code.rows, 7, 7) == '0', "qr: finder separator, top left");
+    expect(cellAt(code.rows, 7, 21) == '0', "qr: finder separator, top right");
+    expect(cellAt(code.rows, 21, 7) == '0', "qr: finder separator, bottom left");
+
+    // The timing patterns alternate on row 6 and column 6.
+    expect(cellAt(code.rows, 6, 8) == '1', "qr: timing starts dark");
+    expect(cellAt(code.rows, 6, 9) == '0', "qr: timing alternates");
+    expect(cellAt(code.rows, 8, 6) == '1', "qr: vertical timing");
+    expect(cellAt(code.rows, 9, 6) == '0', "qr: vertical timing alternates");
+
+    // The alignment pattern (Version 3's single one) and the dark module.
+    expect(cellAt(code.rows, 22, 22) == '1', "qr: alignment centre");
+    expect(cellAt(code.rows, 20, 20) == '1', "qr: alignment outer ring");
+    expect(cellAt(code.rows, 21, 21) == '0', "qr: alignment white ring");
+    expect(cellAt(code.rows, 21, 8) == '1', "qr: dark module");
+
+    // Deterministic, and different input gives a different matrix.
+    const Code again = encode(url);
+    expect(again.rows == code.rows, "qr: deterministic");
+    expect(encode("https://www.windows.com/").rows != code.rows, "qr: input changes the code");
+
+    // The empty string is legal; past the 53-byte payload it is refused.
+    expect(encode("").ok, "qr: empty text encodes");
+    expect(!encode(std::string(kDataCodewords + 1, 'a')).ok, "qr: overlong text refused");
+
+    // The verify harness (tools/verify/qr_check.py) decodes the matrix from
+    // this dump with an independent reader.
+    if (const char* path = std::getenv("BOSSKEY_QR_DUMP")) {
+        if (FILE* f = std::fopen(path, "wb")) {
+            std::fwrite(code.rows.data(), 1, code.rows.size(), f);
+            std::fclose(f);
+            std::printf("qr: matrix written to %s\n", path);
+        }
+    }
+}
+
 } // namespace
 
 int main()
@@ -172,6 +243,7 @@ int main()
     testSequence();
     testPercent();
     testGccLog();
+    testQr();
     if (g_failures == 0) {
         std::printf("all bosskey logic tests passed\n");
         return 0;

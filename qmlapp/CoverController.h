@@ -7,6 +7,7 @@
 
 #include <QElapsedTimer>
 #include <QObject>
+#include <QStringList>
 #include <QTimer>
 #include <string>
 
@@ -24,6 +25,7 @@ class CoverController final : public QObject {
     Q_PROPERTY(bool zh READ zh NOTIFY zhChanged)
     Q_PROPERTY(int percent READ percent NOTIFY percentChanged)
     Q_PROPERTY(bool shown READ shown NOTIFY shownChanged)
+    Q_PROPERTY(QStringList qrRows READ qrRows CONSTANT)
     Q_PROPERTY(GccModel* gccModel READ gccModel CONSTANT)
 public:
     explicit CoverController(QObject* parent = nullptr);
@@ -34,6 +36,9 @@ public:
     bool zh() const { return m_zh; }
     int percent() const { return m_percent; }
     bool shown() const { return m_shown; }
+    // The blue screen's QR code: one string per row, '1' dark. Real, so
+    // scanning it opens the stopcode page the cover names.
+    QStringList qrRows() const { return m_qrRows; }
     GccModel* gccModel() const { return m_gcc; }
 
     // Applies the spec (before the windows show); regenerates the gcc log.
@@ -66,6 +71,7 @@ private:
     int m_percent = 0;
     bool m_shown = false;
     std::string m_buffer; // the rolling key buffer (logic.h's pushKey)
+    QStringList m_qrRows;
     GccModel* m_gcc = nullptr;
     QTimer m_percentTimer;
     QTimer m_autoHideTimer;

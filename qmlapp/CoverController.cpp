@@ -3,6 +3,7 @@
 
 #include "BossQml.h"
 #include "../logic.h"
+#include "../qrcode.h"
 
 #include <QDateTime>
 
@@ -12,6 +13,12 @@ CoverController::CoverController(QObject* parent)
     : QObject(parent)
     , m_gcc(new GccModel(this))
 {
+    // The blue screen's QR code is a real one, encoded once: the URL printed
+    // right below it, so a scan lands on the same page.
+    const qr::Code code = qr::encode("https://www.windows.com/stopcode");
+    if (code.ok)
+        m_qrRows = QString::fromStdString(code.rows).split(u'\n', Qt::SkipEmptyParts);
+
     m_percentTimer.setInterval(250);
     connect(&m_percentTimer, &QTimer::timeout, this, &CoverController::tick);
     m_autoHideTimer.setSingleShot(true);

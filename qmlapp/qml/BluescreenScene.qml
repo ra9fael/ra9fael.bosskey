@@ -58,29 +58,46 @@ Rectangle {
             font.family: "Microsoft YaHei"
             text: root.cover.zh ? "完成" : "complete"
         }
-    }
 
-    // The QR placeholder: a white square with a grid, far enough from the real
-    // one to stay honest but near enough to read as it.
-    Rectangle {
-        x: root.margin
-        y: root.height - root.margin * 0.4 - height * 3.1
-        width: Math.round(root.height * 0.09)
-        height: width
-        color: "white"
+        // A little air, as the real screen has between the percent and the code.
+        Item {
+            width: 1
+            height: Math.round(root.height * 0.03)
+        }
 
-        Canvas {
-            anchors.fill: parent
-            anchors.margins: parent.width * 0.12
-            onPaint: {
-                const ctx = getContext("2d")
-                ctx.fillStyle = "#0078D7"
-                const cells = 9
-                const step = width / cells
-                for (let i = 0; i < cells; ++i)
-                    for (let j = 0; j < cells; ++j)
-                        if ((i * 7 + j * 5 + i * j) % 3 === 0)
-                            ctx.fillRect(i * step, j * step, step * 0.8, step * 0.8)
+        // The QR code, a real one: qrcode.h encodes the same stopcode URL the
+        // text below prints, so scanning it opens that page. The white card is
+        // the quiet zone (4 modules on every side, 29 + 8 = 37 across).
+        Rectangle {
+            width: Math.round(root.height * 0.11)
+            height: width
+            color: "white"
+
+            Canvas {
+                anchors.fill: parent
+                anchors.margins: Math.round(parent.width * 4 / 37)
+                onPaint: {
+                    const ctx = getContext("2d")
+                    const rows = root.cover.qrRows
+                    const n = rows.length
+                    if (n === 0)
+                        return
+                    ctx.fillStyle = "black"
+                    const step = width / n
+                    for (let r = 0; r < n; ++r) {
+                        const line = rows[r]
+                        for (let c = 0; c < n; ++c) {
+                            if (line.charAt(c) !== "1")
+                                continue
+                            // Integer edges keep the modules crisp at this size.
+                            const x0 = Math.round(c * step)
+                            const x1 = Math.round((c + 1) * step)
+                            const y0 = Math.round(r * step)
+                            const y1 = Math.round((r + 1) * step)
+                            ctx.fillRect(x0, y0, x1 - x0, y1 - y0)
+                        }
+                    }
+                }
             }
         }
     }
