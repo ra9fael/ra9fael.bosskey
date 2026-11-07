@@ -56,7 +56,7 @@ python tools/package.py         # dist/ra9fael.bosskey-0.1.0.wsplugin
 .\bosskey.exe --cover bsod | update | gcc [--all] [--autohide <秒>] --app-dir "<WinShun 安装目录>"
 ```
 
-`tools/verify/` 下的 `shot.py`（截图）和 `exit.py`（发送退出序列验证退出）配合 `--autohide` 使用。
+`tools/verify/` 下的 `shot.py`（截图）、`exit.py`（发送退出序列验证退出）和 `qr_check.py`（用 OpenCV 独立解码二维码矩阵）配合 `--autohide` 使用。
 
 ## 架构
 
@@ -65,6 +65,7 @@ bosskey.exe      无 Qt 启动器：把 WinShun 目录加进 DLL 搜索路径，
 BossKeyApp.dll   worker 线程跑 winshun.h SDK（JSON-RPC over stdio）
                  GUI 线程预创建每屏一个隐藏的 QML 全屏窗口，触发时只做 showFullScreen + raise
 logic.h          纯逻辑：场景映射、退出序列匹配、百分比节奏、gcc 日志生成（可单测）
+qrcode.h         真二维码编码器（Version 3 / 纠错 L）：蓝屏上那个能扫的码
 qmlapp/qml/      BossCover.qml（全屏容器 + 按键吞掉）+ 三个场景
 ```
 

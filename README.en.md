@@ -56,7 +56,7 @@ The scenes can be checked without WinShun:
 .\bosskey.exe --cover bsod | update | gcc [--all] [--autohide <sec>] --app-dir "<WinShun install dir>"
 ```
 
-`tools/verify/` has `shot.py` (screenshot) and `exit.py` (sends the exit sequence and verifies the exit) for use with `--autohide`.
+`tools/verify/` has `shot.py` (screenshot), `exit.py` (sends the exit sequence and verifies the exit) and `qr_check.py` (decodes the QR matrix with OpenCV) for use with `--autohide`.
 
 ## Architecture
 
@@ -66,6 +66,7 @@ BossKeyApp.dll   worker thread runs the winshun.h SDK (JSON-RPC over stdio)
                  the GUI thread precreates one hidden fullscreen QML window per screen;
                  showing one is showFullScreen + raise
 logic.h          pure logic: scene map, exit-sequence matcher, percent pacing, gcc log (testable)
+qrcode.h         real QR encoder (Version 3 / level L): the scannable code on the blue screen
 qmlapp/qml/      BossCover.qml (fullscreen container + swallowed keys) + three scenes
 ```
 
