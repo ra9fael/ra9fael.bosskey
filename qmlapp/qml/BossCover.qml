@@ -18,13 +18,6 @@ Window {
     // showFullScreen (the window was created fullscreen but stayed invisible).
     // QML windows start hidden, and only BossQml.cpp shows or hides them.
 
-    // The QML Window defaults to 800x480 and re-asserts it after show; pin the
-    // geometry to the window's own screen (follows the C++ setScreen).
-    x: 0
-    y: 0
-    width: Screen.width
-    height: Screen.height
-
     Loader {
         id: sceneLoader
         anchors.fill: parent

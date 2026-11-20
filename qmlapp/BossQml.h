@@ -17,6 +17,8 @@ struct CoverSpec {
     int autoHideSec = 0;      // 0 = until dismissed
     std::string gccProject;
     bool allScreens = false;  // false: the screen with the mouse only
+    bool windowed = false;    // preview only: small window on one screen
+    int previewScreen = -1;   // preview screen index; -1 selects the primary screen
     bool zh = true;
 };
 

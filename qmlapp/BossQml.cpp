@@ -80,7 +80,11 @@ bool guiShow(const CoverSpec& spec, std::string& error)
     g_controller->applySpec(spec);
 
     QList<QScreen*> targets;
-    if (spec.allScreens) {
+    if (spec.windowed && spec.previewScreen >= 0) {
+        const QList<QScreen*> screens = QGuiApplication::screens();
+        if (spec.previewScreen < screens.size())
+            targets.push_back(screens.at(spec.previewScreen));
+    } else if (spec.allScreens) {
         targets = QGuiApplication::screens();
     } else if (QScreen* at = QGuiApplication::screenAt(QCursor::pos())) {
         targets.push_back(at);
@@ -98,7 +102,14 @@ bool guiShow(const CoverSpec& spec, std::string& error)
         if (!window)
             continue;
         window->setScreen(screen);
-        window->showFullScreen();
+        const QRect geometry = screen->geometry();
+        if (spec.windowed) {
+            window->setGeometry(geometry.x(), geometry.y(), 480, 270);
+            window->show();
+        } else {
+            window->setGeometry(geometry);
+            window->showFullScreen();
+        }
         ws::win::bringToFront(window); // a user gesture just happened: take the focus
         covered.push_back(screen);
     }

@@ -7,8 +7,10 @@
 // so a show is only showFullScreen + raise.
 //
 // winshunBossKeyPreview: `bosskey.exe --cover bsod|update|gcc [--all]
-// [--autohide <sec>] [--en] [--app-dir <folder>]` opens the cover directly, no
-// WinShun and no protocol — how the scenes are checked. --autohide closes it
+// [--windowed] [--screen <index>] [--autohide <sec>] [--en]
+// [--app-dir <folder>]` opens the cover directly, no WinShun and no protocol.
+// --windowed shows a small window; --screen selects its screen index (0-based).
+// --autohide closes it
 // after the seconds (the verify scripts' chance to screenshot and leave).
 //
 // The runtime setup follows WinShun's shared-Qt contract (plugin.json declares
@@ -21,6 +23,7 @@
 #include "../winshun.h"
 
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQuickWindow>
 
 #include <QDir>
@@ -72,6 +75,16 @@ extern "C" __declspec(dllexport) int winshunBossKeyMain(const wchar_t* appDirNam
     char name[] = "BossKey";
     char* argv[] = {name, nullptr};
     QGuiApplication app(argc, argv);
+    QIcon icon;
+    icon.addFile(u":/plugin-icons/app-16.png"_s, QSize(16, 16));
+    icon.addFile(u":/plugin-icons/app-20.png"_s, QSize(20, 20));
+    icon.addFile(u":/plugin-icons/app-24.png"_s, QSize(24, 24));
+    icon.addFile(u":/plugin-icons/app-32.png"_s, QSize(32, 32));
+    icon.addFile(u":/plugin-icons/app-40.png"_s, QSize(40, 40));
+    icon.addFile(u":/plugin-icons/app-48.png"_s, QSize(48, 48));
+    icon.addFile(u":/plugin-icons/app-64.png"_s, QSize(64, 64));
+    icon.addFile(u":/plugin-icons/app-256.png"_s, QSize(256, 256));
+    app.setWindowIcon(icon);
     startGui(software);
     QGuiApplication::setQuitOnLastWindowClosed(false); // the cover hides, not quits
 
@@ -114,6 +127,16 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     char name[] = "BossKey";
     char* argv[] = {name, nullptr};
     QGuiApplication app(argc, argv);
+    QIcon icon;
+    icon.addFile(u":/plugin-icons/app-16.png"_s, QSize(16, 16));
+    icon.addFile(u":/plugin-icons/app-20.png"_s, QSize(20, 20));
+    icon.addFile(u":/plugin-icons/app-24.png"_s, QSize(24, 24));
+    icon.addFile(u":/plugin-icons/app-32.png"_s, QSize(32, 32));
+    icon.addFile(u":/plugin-icons/app-40.png"_s, QSize(40, 40));
+    icon.addFile(u":/plugin-icons/app-48.png"_s, QSize(48, 48));
+    icon.addFile(u":/plugin-icons/app-64.png"_s, QSize(64, 64));
+    icon.addFile(u":/plugin-icons/app-256.png"_s, QSize(256, 256));
+    app.setWindowIcon(icon);
     startGui(software);
     QGuiApplication::setQuitOnLastWindowClosed(false);
     bosskey::precreateCover();
@@ -131,8 +154,12 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     QString scene;
     for (int i = 0; i < args.size(); ++i) {
         const QString& arg = args.at(i);
-        if (arg == u"--en" || arg == u"--all" || arg == u"--app-dir")
+        if (arg == u"--en" || arg == u"--all" || arg == u"--windowed" || arg == u"--app-dir")
             continue;
+        if (arg == u"--screen" && i + 1 < args.size()) {
+            spec.previewScreen = args.at(++i).toInt();
+            continue;
+        }
         if (arg == u"--autohide" && i + 1 < args.size()) {
             spec.autoHideSec = std::max(0, args.at(++i).toInt());
             continue;
@@ -144,6 +171,7 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     }
     spec.scene = scene.toStdString();
     spec.allScreens = args.contains(u"--all"_s);
+    spec.windowed = args.contains(u"--windowed"_s);
     if (!bosskey::isKnownScene(spec.scene)) {
         std::fprintf(stderr, "bosskey: --cover needs bsod | update | gcc\n");
         std::fflush(stderr);
