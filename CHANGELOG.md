@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Add a Matrix-style digital rain cover scene, available as `boss m`.
+
 ## [0.1.1] - 2026-11-20
 
 ### Fixed

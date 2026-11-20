@@ -61,6 +61,8 @@ std::string sceneTitle(bool zh, const std::string& scene)
         return tr(zh, "系统更新伪装", "Windows Update cover");
     if (scene == bosskey::kSceneGcc)
         return tr(zh, "gcc 编译伪装", "gcc build cover");
+    if (scene == bosskey::kSceneMatrix)
+        return tr(zh, "黑客帝国代码雨", "Matrix digital rain");
     return scene;
 }
 
@@ -70,7 +72,11 @@ std::string sceneHint(bool zh, const std::string& scene)
         return tr(zh, "正在收集错误信息，请不要关机", "Collecting error info, do not power off");
     if (scene == bosskey::kSceneUpdate)
         return tr(zh, "正在处理更新，请勿关闭电脑", "Working on updates, do not turn off");
-    return tr(zh, "gcc -Wall -O2 持续输出", "gcc -Wall -O2 streaming output");
+    if (scene == bosskey::kSceneGcc)
+        return tr(zh, "gcc -Wall -O2 持续输出", "gcc -Wall -O2 streaming output");
+    if (scene == bosskey::kSceneMatrix)
+        return tr(zh, "绿色代码流持续滚动", "Green code streams across the screen");
+    return tr(zh, "绿色代码流持续滚动", "Green code streams across the screen");
 }
 
 winshun::Item makeSceneRow(bool zh,
@@ -87,7 +93,11 @@ winshun::Item makeSceneRow(bool zh,
                        : " · auto-dismiss in " + secs + "s";
     }
     winshun::Item row("cover:" + token, sceneTitle(zh, scene), subtitle);
-    row.withIcon("color:#0078D7");
+    const char* color = scene == bosskey::kSceneMatrix ? "#16A34A"
+                      : scene == bosskey::kSceneGcc ? "#4EC9B0"
+                      : scene == bosskey::kSceneUpdate ? "#2F6FED"
+                      : "#0078D7";
+    row.withIcon(std::string("color:") + color);
     row.withScore(100);
     row.withData(winshun::Json::Object {
         {"scene", scene},

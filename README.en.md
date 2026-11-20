@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-Boss incoming? Type `boss b` and the screen instantly turns into a bluescreen. `boss u` is Windows Update, `boss t` is a gcc build in progress. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
+Boss incoming? Type `boss b` and the screen instantly turns into a bluescreen. `boss u` is Windows Update, `boss t` is a gcc build in progress, and `boss m` is Matrix-style digital rain. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
 
 The result list stays presentable; the fullscreen part does not.
 
@@ -10,10 +10,11 @@ The result list stays presentable; the fullscreen part does not.
 
 | Input | Effect |
 |---|---|
-| `boss ` | lists the three scene rows |
+| `boss ` | lists the four scene rows |
 | `boss b` | fullscreen bluescreen (Win10 style, percent slowly collecting error info) |
 | `boss u` | fullscreen Windows Update (spinner stalled at 87%) |
 | `boss t` | fullscreen gcc build (`-Wall -O2`, real-format warnings, streaming) |
+| `boss m` | fullscreen Matrix-style digital rain (katakana and digits with fading trails) |
 
 Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. The top-level keyword also has the Chinese alias `摸鱼`.
 
@@ -21,7 +22,7 @@ Press Enter to trigger the fullscreen cover; while covered, every keystroke is s
 
 | Setting | Default | Meaning |
 |---|---|---|
-| Sub-trigger map | `b=bsod,u=update,t=gcc` | custom tokens, e.g. `a=bsod,s=update,d=gcc`; scenes are bsod / update / gcc only |
+| Sub-trigger map | `b=bsod,u=update,t=gcc,m=matrix` | custom tokens, e.g. `a=bsod,s=update,d=gcc`; scenes are bsod / update / gcc / matrix |
 | Exit key sequence | `deadbeef` | type it on the cover to exit, case-insensitive; letters and digits only |
 | Auto-dismiss seconds | `0` | 0 = keep the cover until dismissed manually |
 | gcc scene project name | `winshun-core` | the target name shown in the build output |
@@ -57,7 +58,7 @@ Outputs: `bosskey.exe` (a Qt-less starter) and `BossKeyApp.dll` (the QML cover; 
 The scenes can be checked without WinShun:
 
 ```powershell
-.\bosskey.exe --cover bsod | update | gcc [--all] [--autohide <sec>] --app-dir "<WinShun install dir>"
+.\bosskey.exe --cover bsod | update | gcc | matrix [--all] [--windowed] [--autohide <sec>] --app-dir "<WinShun install dir>"
 ```
 
 `tools/verify/` has `shot.py` (screenshot), `exit.py` (sends the exit sequence and verifies the exit) and `qr_check.py` (decodes the QR matrix with OpenCV) for use with `--autohide`.
@@ -72,7 +73,7 @@ BossKeyApp.dll   worker thread runs the winshun.h SDK (JSON-RPC over stdio)
                  showing one is showFullScreen + raise
 logic.h          pure logic: scene map, exit-sequence matcher, percent pacing, gcc log (testable)
 qrcode.h         real QR encoder (Version 3 / level L): the scannable code on the blue screen
-qmlapp/qml/      BossCover.qml (fullscreen container + swallowed keys) + three scenes
+qmlapp/qml/      BossCover.qml (fullscreen container + swallowed keys) + five scenes
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for details. License: MIT, author ra9fael.

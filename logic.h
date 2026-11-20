@@ -21,10 +21,12 @@ namespace bosskey {
 constexpr const char* kSceneBsod = "bsod";
 constexpr const char* kSceneUpdate = "update";
 constexpr const char* kSceneGcc = "gcc";
+constexpr const char* kSceneMatrix = "matrix";
 
 inline bool isKnownScene(const std::string& scene)
 {
-    return scene == kSceneBsod || scene == kSceneUpdate || scene == kSceneGcc;
+    return scene == kSceneBsod || scene == kSceneUpdate || scene == kSceneGcc
+        || scene == kSceneMatrix;
 }
 
 inline std::string lower(std::string s)
@@ -90,7 +92,8 @@ inline std::vector<SceneBinding> parseSceneMap(const std::string& text)
 // The default map, used when the user's text parses to nothing.
 inline std::vector<SceneBinding> defaultSceneMap()
 {
-    return {{"b", kSceneBsod}, {"u", kSceneUpdate}, {"t", kSceneGcc}};
+    return {{"b", kSceneBsod}, {"u", kSceneUpdate}, {"t", kSceneGcc},
+            {"m", kSceneMatrix}};
 }
 
 // The scene for a query's first word; "" when the word is not bound.

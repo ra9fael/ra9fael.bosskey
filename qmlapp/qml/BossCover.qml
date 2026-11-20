@@ -9,6 +9,7 @@ Window {
     // Not `required`: createWithInitialProperties cannot attach required
     // properties to a Window root ("is not an Item"), a plain one it sets fine.
     property var cover
+    property int screenIndex: 0
 
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     title: "WinShunBossKeyCover" // the verify scripts find it by this
@@ -23,6 +24,7 @@ Window {
         anchors.fill: parent
         sourceComponent: root.cover.scene === "bsod" ? bsodScene
                        : root.cover.scene === "update" ? updateScene
+                       : root.cover.scene === "matrix" ? matrixScene
                        : gccScene
     }
 
@@ -37,6 +39,10 @@ Window {
     Component {
         id: gccScene
         GccScene { cover: root.cover }
+    }
+    Component {
+        id: matrixScene
+        MatrixScene { cover: root.cover; screenIndex: root.screenIndex }
     }
 
     // Keys cannot attach to a Window root ("is not an Item"), so a transparent

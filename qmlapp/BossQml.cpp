@@ -61,6 +61,7 @@ QQuickWindow* coverWindow(QScreen* screen)
     }
     QObject* object = component.createWithInitialProperties({
         {u"cover"_s, QVariant::fromValue<QObject*>(g_controller)},
+        {u"screenIndex"_s, QGuiApplication::screens().indexOf(screen)},
     });
     auto* window = qobject_cast<QQuickWindow*>(object);
     if (!window) {

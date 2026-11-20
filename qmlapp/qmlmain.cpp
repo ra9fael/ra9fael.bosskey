@@ -173,7 +173,7 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     spec.allScreens = args.contains(u"--all"_s);
     spec.windowed = args.contains(u"--windowed"_s);
     if (!bosskey::isKnownScene(spec.scene)) {
-        std::fprintf(stderr, "bosskey: --cover needs bsod | update | gcc\n");
+        std::fprintf(stderr, "bosskey: --cover needs bsod | update | gcc | matrix\n");
         std::fflush(stderr);
         return 2;
     }
