@@ -64,6 +64,7 @@
       "id": "cover",
       "keyword": ["boss", "摸鱼"],
       "title": {"zh": "老板键伪装", "en": "Boss cover"},
+      "icon": "glyph:U+ED1A",
       "hint": {"zh": "b 蓝屏 · u 更新 · t 编译；Enter 全屏伪装，键入退出序列返回", "en": "b bluescreen · u update · t build; Enter covers the screen, type the exit sequence to return"},
       "actions": [
         {"id": "cover", "title": {"zh": "全屏伪装", "en": "Cover the screen"}, "key": "Enter"}

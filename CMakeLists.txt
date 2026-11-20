@@ -17,7 +17,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick)
 # The QML module's resources under :/qt/qml/<URI>, as WinShun's own app does.
 qt_policy(SET QTP0001 NEW)
 
-add_executable(bosskey qmlapp/stub/main.cpp)
+add_executable(bosskey qmlapp/stub/main.cpp bosskey.rc)
 target_compile_definitions(bosskey PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
 # Beside BossKeyApp.dll, where plugin.json's runtime.program points.
 set_target_properties(bosskey PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
@@ -40,6 +40,7 @@ set(app_dir "${WINSHUN_DIR}/src/app")
 set(core_dir "${WINSHUN_DIR}/src/core")
 qt_add_library(BossKeyApp SHARED
     main.cpp
+    bosskey-icons.qrc
     qmlapp/qmlmain.cpp
     qmlapp/BossQml.cpp
     qmlapp/CoverController.cpp
