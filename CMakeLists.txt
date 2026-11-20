@@ -13,7 +13,7 @@ set(CMAKE_AUTOMOC ON) # the controller and model are Q_OBJECT types
 # plugin.json names bosskey.exe.
 set(WINSHUN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../WinShun" CACHE PATH
     "The WinShun checkout the shared platform helpers come from")
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick ShaderToolsTools)
 # The QML module's resources under :/qt/qml/<URI>, as WinShun's own app does.
 qt_policy(SET QTP0001 NEW)
 
@@ -86,6 +86,15 @@ qt_add_qml_module(BossKeyApp
 # Bytecode only, no QML compiled to C++: the plugin runs on whichever Qt 6 its
 # WinShun comes with (see capture's CMakeLists).
 set_target_properties(BossKeyApp PROPERTIES QT_QMLCACHEGEN_ARGUMENTS "--only-bytecode")
+
+# The black hole scene's fragment shader: qsb bakes it into the resource tree at
+# the QML module's own prefix, so the scene's relative URL
+# "BlackholeScene.frag.qsb" resolves. Default bake: GLSL 100es/120/150,
+# HLSL 5.0, MSL 1.2.
+qt_add_shaders(BossKeyApp "bosskey_shaders"
+    PREFIX "/qt/qml/BossKey"
+    BASE "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml"
+    FILES "qmlapp/qml/BlackholeScene.frag")
 
 target_link_libraries(BossKeyApp PRIVATE
     Qt6::Gui Qt6::Qml Qt6::Quick

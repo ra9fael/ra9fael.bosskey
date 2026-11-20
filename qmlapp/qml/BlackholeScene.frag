@@ -1,0 +1,244 @@
+// BlackholeScene.frag - a Schwarzschild black hole traced per pixel.
+//
+// Ported from XboxNahida/ghostty-blackhole-main (MIT), whose shader follows Eric
+// Bruneton's "Real-time High-Quality Rendering of Non-Rotating Black Holes"
+// (BSD-3-Clause). The physics is unchanged: every pixel's null geodesic is
+// integrated with a = -(3/2) h^2 x / r^5, the disk is crossed with interpolation
+// and lit by a Shakura-Sunyaev profile with relativistic beaming, and the sky is
+// a procedural starfield sampled along the bent ray. The shadow, the photon
+// ring, the upper and lower disk arcs and the lensed starfield therefore are
+// results of the integration, not things painted on.
+//
+// Differences from the reference: no desktop texture (this cover is
+// self-contained), no token/pomodoro/demo size modes, and no struct or uniform
+// arrays - the look is a flat set of uniforms so it runs as a QML ShaderEffect.
+//
+// Baked with qsb (see CMakeLists.txt): GLSL 100 es / 120 / 150 + HLSL 50 + MSL 12.
+
+#version 440
+
+layout(location = 1) in vec2 qt_MultiTexCoord0;
+layout(location = 0) out vec4 fragColor;
+
+// ShaderEffect properties land here: Qt requires the user uniforms in a std140
+// block (a Vulkan/SPIR-V rule that the GLSL ES targets inherit), and Qt's own
+// qt_Matrix/qt_Opacity must sit at the head of that block or it binds nothing
+// and the effect silently draws nothing.
+layout(std140, binding = 0) uniform buf {
+    mat4 qt_Matrix;
+    float qt_Opacity;
+    float uAspect;
+    float uTime;
+    float uSeed;
+    float uHoleRadius;
+    float uDiskInner;
+    float uDiskOuter;
+    float uIncl;
+    float uRoll;
+    float uTemp;
+    float uGain;
+    float uExposure;
+    float uSpeed;
+    float uWind;
+    float uContrast;
+    float uDoppler;
+    float uBeam;
+    float uOpacity;
+    float uStarGain;
+    float uDilation;
+};
+
+#define B_CRIT 2.5980762   // 3*sqrt(3)/2: the shadow's angular radius, in r_s
+#define N_STEPS 48         // geodesic integration steps per pixel
+#define TAU 6.2831853
+#define SKY vec3(0.004, 0.005, 0.012)
+
+float hash21(vec2 p) {
+    p = fract(p * vec2(234.34, 435.345));
+    p += dot(p, p + 34.23);
+    return fract(p.x * p.y);
+}
+
+// GLSL mod is floor-based, HLSL fmod truncates: write it once for both.
+float glmod(float x, float y) { return x - y * floor(x / y); }
+
+// Value noise whose y lattice wraps every perY cells, so the disk's angular
+// dimension tiles seamlessly across the atan branch cut.
+float vnoiseWrapY(vec2 p, float perY) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float y0 = glmod(i.y, perY), y1 = glmod(i.y + 1.0, perY);
+    return mix(mix(hash21(vec2(i.x, y0)), hash21(vec2(i.x + 1.0, y0)), f.x),
+               mix(hash21(vec2(i.x, y1)), hash21(vec2(i.x + 1.0, y1)), f.x),
+               f.y);
+}
+
+vec2 rot(vec2 v, float a) {
+    float c = cos(a), s = sin(a);
+    return vec2(c * v.x - s * v.y, s * v.x + c * v.y);
+}
+
+// Blackbody colour from temperature in Kelvin (Tanner Helland fit, normalized).
+vec3 blackbody(float T) {
+    float t = clamp(T, 1500.0, 40000.0) / 100.0;
+    float r = t <= 66.0 ? 1.0
+                        : clamp(1.292936 * pow(t - 60.0, -0.1332047), 0.0, 1.0);
+    float g = t <= 66.0 ? clamp(0.3900816 * log(t) - 0.6318414, 0.0, 1.0)
+                        : clamp(1.1298909 * pow(t - 60.0, -0.0755148), 0.0, 1.0);
+    float b = t >= 66.0 ? 1.0
+                        : (t <= 19.0 ? 0.0
+                                     : clamp(0.5432068 * log(t - 10.0) - 1.1962540, 0.0, 1.0));
+    return vec3(r, g, b);
+}
+
+// One star in a fraction of the direction grid; because it is sampled with the
+// *bent* ray, stars smear into arcs around the hole for free.
+vec3 stars(vec3 d) {
+    vec2 sph = vec2(atan(d.x, -d.z), asin(clamp(d.y, -1.0, 1.0)));
+    vec2 g   = sph * 40.0;
+    vec2 id  = floor(g);
+    float h  = hash21(id);
+    if (h < 0.92)
+        return vec3(0.0);
+    vec2 f   = fract(g) - 0.5;
+    vec2 off = (vec2(hash21(id + 17.3), hash21(id + 31.7)) - 0.5) * 0.7;
+    float spark = smoothstep(0.10, 0.0, length(f - off));
+    float tw    = 0.7 + 0.3 * sin(uTime * (0.5 + 2.0 * hash21(id + 5.1)) + 40.0 * h);
+    vec3 tint   = mix(vec3(1.0, 0.82, 0.60), vec3(0.75, 0.85, 1.0), hash21(id + 2.9));
+    return tint * spark * tw * ((h - 0.92) / 0.08);
+}
+
+void main() {
+    vec2  uv     = qt_MultiTexCoord0;
+    float t      = uTime;
+
+    // The hole drifts on a slow Lissajous path; uSeed decorrelates the screens.
+    vec2 center = vec2(0.5, 0.5)
+        + vec2(0.060 * sin(t * 0.210 + uSeed * TAU) + 0.030 * sin(t * 0.083 + uSeed * 2.1),
+               0.050 * sin(t * 0.157 + 2.0 + uSeed * 4.0) + 0.030 * sin(t * 0.117 + uSeed));
+
+    float rh    = max(uHoleRadius, 0.004);
+    float dil   = clamp(uDilation, 0.05, 1.0);
+    float small = step(rh, 0.085);   // 1 while the hole is small on screen
+
+    // Screen to world: 1 screen unit is W Schwarzschild radii, so the shadow
+    // shows up exactly rh tall.
+    vec2  p  = (uv - center) * vec2(uAspect, 1.0);
+    float W  = B_CRIT / rh;
+    vec2  pr = rot(vec2(p.x, -p.y), uRoll) * W;
+    float b  = length(pr);
+
+    float rin  = max(uDiskInner, 1.6);
+    float rout = max(uDiskOuter, rin + 0.5);
+    // Small holes put the disk's projection closer to the critical edge: widen
+    // the near field so its upper and lower bands are not cut off early.
+    float bmax = rout + mix(3.0, 8.0, small);
+    float Z0   = max(14.0, rout + 5.0);
+    // Below ~0.085 the inner edge is blended toward the photon sphere so the
+    // band does not break apart when the inclination changes.
+    float diskRin = mix(1.60, rin, smoothstep(0.035, 0.085, rh));
+
+    vec3 col;
+
+    if (b >= bmax) {
+        // Far field: no integration. The sky is a function of direction, so the
+        // weak-field bend is just sampling it along the deflected ray.
+        vec3 d = normalize(vec3(-(pr / b) * (2.0 / b), -1.0));
+        col = SKY + stars(d) * uStarGain;
+    } else {
+        // Near field: integrate x'' = -(3/2) h^2 x / r^5, the exact Schwarzschild
+        // photon bending. h^2 = b^2 is conserved, so it is computed once.
+        vec3  x  = vec3(pr, Z0);
+        vec3  v  = vec3(0.0, 0.0, -1.0);
+        float h2 = dot(pr, pr);
+
+        float ci = cos(uIncl), si = sin(uIncl);
+        vec3  n  = vec3(0.0, si, ci);   // disk normal
+        vec3  e2 = vec3(0.0, ci, -si);  // in-plane axis completing (x, e2, n)
+        float sdir = uSpeed < 0.0 ? -1.0 : 1.0;
+        float spd  = abs(uSpeed);
+
+        vec3  emitc = vec3(0.0);        // accumulated disk light (HDR)
+        float trans = 1.0;              // transmittance toward the sky
+        bool  captured = false;
+        float sPrev = dot(x, n);
+        vec3  xPrev = x;
+
+        for (int i = 0; i < N_STEPS; i++) {
+            float r2 = dot(x, x);
+            bool insideHorizon = r2 < 1.0;
+            // A small hole finishes this step's disk crossing before ending, so
+            // its inner edge is not cut off.
+            if (insideHorizon && small < 0.5) { captured = true; break; }
+            if (x.z < -Z0 && v.z < 0.0) break;          // escaped out the back
+            if (r2 > 4.0 * Z0 * Z0) break;              // flung far sideways
+            float r  = sqrt(r2);
+            float dt = clamp(0.16 * r, 0.03, 1.5);      // fine near, coarse far
+            vec3  a  = -1.5 * h2 * x / (r2 * r2 * r);
+            v += a * (0.5 * dt);
+            x += v * dt;                                // leapfrog: kick-drift-kick
+            r2 = dot(x, x);
+            r  = sqrt(r2);
+            a  = -1.5 * h2 * x / (r2 * r2 * r);
+            v += a * (0.5 * dt);
+
+            // Did this step pierce the disk plane?
+            float s = dot(x, n);
+            if (s * sPrev < 0.0 && trans > 0.02) {
+                float tc = sPrev / (sPrev - s);
+                vec3  xc = mix(xPrev, x, tc);
+                float rc = length(xc);
+                if (rc > diskRin && rc < rout) {
+                    float band = smoothstep(diskRin, diskRin * 1.25, rc)
+                               * (1.0 - smoothstep(rout * 0.70, rout, rc));
+                    float phi   = atan(dot(xc, e2), xc.x);
+                    float turns = phi / TAU;
+                    float kep   = pow(diskRin / rc, 1.5);
+                    // sqrt(1 - 1.5/r): inner orbits run slow, and dil winds the
+                    // whole pattern down as the hole gets heavier.
+                    float gloc  = sqrt(max(1.0 - 1.5 / rc, 0.02));
+                    float swirl = rc * uWind * 0.12 - t * kep * spd * gloc * dil * sdir;
+                    float fine  = vnoiseWrapY(vec2(rc * 2.8, turns * 19.0 + swirl * 3.0), 19.0);
+                    float broad = vnoiseWrapY(vec2(rc * 1.0, turns * 9.0 + swirl * 1.5 + 7.0), 9.0);
+                    float streaks = mix(0.52, 0.48 + 0.22 * broad + 0.10 * fine,
+                                        clamp(uContrast * 0.55, 0.0, 1.0));
+
+                    // g = sqrt(1 - 1.5/r) / (1 - beta.k): relativistic shift and
+                    // beaming of gas on a circular geodesic.
+                    vec3  gasdir = normalize(cross(n, xc)) * sdir;
+                    float beta   = clamp(inversesqrt(max(2.0 * (rc - 1.0), 0.2)), 0.0, 0.99);
+                    float g      = gloc / max(1.0 + beta * dot(gasdir, normalize(v)), 0.05);
+                    g = mix(1.0, g, uDoppler);
+
+                    // Shakura-Sunyaev temperature profile, peak normalized to 1.
+                    float xpr   = max(1.0 - sqrt(diskRin / rc), 0.0);
+                    float tprof = pow(diskRin / rc, 0.75) * pow(xpr, 0.25) / 0.488;
+                    vec3  cbb   = blackbody(uTemp * tprof * g);
+                    float boost = pow(g, uBeam);
+
+                    float density = band * streaks;
+                    emitc += trans * cbb * (uGain * 2.2 * density * tprof * tprof * boost);
+                    // Seen at an angle the front band covers the back one: keep it
+                    // glowing but less opaque so the horizon edge is not blacked out.
+                    trans *= 1.0 - clamp(uOpacity * density * mix(1.0, 0.58, small), 0.0, 1.0);
+                }
+            }
+            if (insideHorizon) { captured = true; break; }
+            sPrev = s;
+            xPrev = x;
+        }
+        // Rays still wound up near the photon sphere when the budget ran out are
+        // as good as captured.
+        if (!captured && dot(x, x) < 4.0)
+            captured = true;
+
+        vec3 bg = vec3(0.0);
+        if (!captured)
+            bg = SKY + stars(normalize(v)) * uStarGain;
+
+        // Disk light is HDR: tonemap it on top of the sky.
+        col = bg * trans + (vec3(1.0) - exp(-emitc * uExposure));
+    }
+
+    fragColor = vec4(col, 1.0);
+}

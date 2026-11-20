@@ -9,6 +9,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Add Matrix-style digital rain and black hole cover scenes, available as `boss m` and `boss h`.
 
+### Changed
+
+- The black hole scene is a fragment shader: every pixel's null geodesic is integrated through the Schwarzschild metric (`a = -(3/2) h² x / r⁵`, 48 leapfrog steps), so the shadow, the photon ring, the accretion disk's upper and lower arcs and the starfield lensed into arcs around the hole are results of the integration rather than drawings. Ported from XboxNahida/ghostty-blackhole-main, after Eric Bruneton's black hole shader; the analysis and the porting notes are in docs/blackhole-shader.md.
+- The covers render on Qt's D3D11 backend. Qt's software rasterizer draws no `ShaderEffect` at all — it skips it silently, which would leave `boss h` a black screen — so the software path and the `BOSSKEY_RENDERER` switch are gone. `runtime.memoryMB` rises from 128 to 1024 for the swapchains and texture atlases (91.8 MB private commit measured fullscreen at 1920×1080 on one display).
+
 ## [0.1.1] - 2026-11-20
 
 ### Fixed

@@ -15,8 +15,9 @@
 //
 // The runtime setup follows WinShun's shared-Qt contract (plugin.json declares
 // runtime.qt = "host"): the host sets WS_QT_DIR, the starter passes that folder
-// here, and Qt's library paths point there. The covers render on the software
-// rasterizer (see startGui).
+// here, and Qt's library paths point there. The covers render on D3D11 (see
+// startGui): the black hole scene is a fragment shader, and Qt's software
+// rasterizer draws no ShaderEffect at all.
 
 #include "BossQml.h"
 #include "../logic.h"
@@ -41,19 +42,19 @@ using namespace Qt::StringLiterals;
 namespace {
 
 // The GUI thread's setup, shared by both entries.
-void prepareGui(const QString& appDir, bool software)
+void prepareGui(const QString& appDir)
 {
     QCoreApplication::setLibraryPaths({appDir}); // platforms\qwindows.dll: WinShun's
-    // The font engine as WinShun has it: FreeType, GDI for the software renderer.
-    qputenv("QT_QPA_PLATFORM", software ? "windows:fontengine=gdi" : "windows:fontengine=freetype");
     QCoreApplication::setOrganizationName(u"WinShun"_s);
     QCoreApplication::setApplicationName(u"WinShun"_s);
 }
 
-void startGui(bool software)
+void startGui()
 {
+    // Whatever QT_QPA_PLATFORM the environment carries (a test harness, say)
+    // must not decide which platform plugin the cover runs on.
     qunsetenv("QT_QPA_PLATFORM");
-    QQuickWindow::setGraphicsApi(software ? QSGRendererInterface::Software : QSGRendererInterface::Direct3D11);
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::Direct3D11);
     QQuickWindow::setTextRenderType(QQuickWindow::NativeTextRendering);
 }
 
@@ -64,13 +65,10 @@ extern "C" __declspec(dllexport) int winshunBossKeyMain(const wchar_t* appDirNam
 {
     const QString appDir = QString::fromWCharArray(appDirName);
     ::SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
-    // Software rendering is the default: the covers are solid colors and text,
-    // which the raster engine draws just as well, and it keeps the process's
-    // commit at ~55 MB even with a fullscreen window per display — two D3D11
-    // swapchains plus texture atlases measured ~210 MB, past a 128 MB sandbox
-    // job limit. BOSSKEY_RENDERER=d3d11 puts the GPU back (debugging).
-    const bool software = qEnvironmentVariable("BOSSKEY_RENDERER") != "d3d11";
-    prepareGui(appDir, software);
+    // D3D11 is the one backend that draws the black hole scene's ShaderEffect:
+    // Qt's software rasterizer skips it silently. plugin.json raises the sandbox
+    // job limit to 1024 MB for the swapchains and texture atlases.
+    prepareGui(appDir);
     int argc = 1;
     char name[] = "BossKey";
     char* argv[] = {name, nullptr};
@@ -85,7 +83,7 @@ extern "C" __declspec(dllexport) int winshunBossKeyMain(const wchar_t* appDirNam
     icon.addFile(u":/plugin-icons/app-64.png"_s, QSize(64, 64));
     icon.addFile(u":/plugin-icons/app-256.png"_s, QSize(256, 256));
     app.setWindowIcon(icon);
-    startGui(software);
+    startGui();
     QGuiApplication::setQuitOnLastWindowClosed(false); // the cover hides, not quits
 
     // The cover windows go up hidden now; showing one later is instant.
@@ -121,8 +119,7 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
             args.push_back(QString::fromWCharArray(wide[i]));
         ::LocalFree(wide);
     }
-    const bool software = qEnvironmentVariable("BOSSKEY_RENDERER") != "d3d11";
-    prepareGui(appDir, software);
+    prepareGui(appDir);
     int argc = 1;
     char name[] = "BossKey";
     char* argv[] = {name, nullptr};
@@ -137,7 +134,7 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     icon.addFile(u":/plugin-icons/app-64.png"_s, QSize(64, 64));
     icon.addFile(u":/plugin-icons/app-256.png"_s, QSize(256, 256));
     app.setWindowIcon(icon);
-    startGui(software);
+    startGui();
     QGuiApplication::setQuitOnLastWindowClosed(false);
     bosskey::precreateCover();
     QObject::connect(bosskey::coverController(), &bosskey::CoverController::exitRequested,

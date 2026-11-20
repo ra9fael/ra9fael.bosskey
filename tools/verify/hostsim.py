@@ -38,7 +38,6 @@ def main():
             settings = json.loads(arg.split("=", 1)[1])
     env = dict(os.environ)
     env["WS_APP_DIR"] = WS_DIR
-    env.pop("BOSSKEY_RENDERER", None)  # the host does not force a renderer
     proc = subprocess.Popen([EXE], env=env, cwd=ROOT,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)

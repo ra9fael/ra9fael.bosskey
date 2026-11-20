@@ -15,7 +15,7 @@ The result list stays presentable; the fullscreen part does not.
 | `boss u` | fullscreen Windows Update (spinner stalled at 87%) |
 | `boss t` | fullscreen gcc build (`-Wall -O2`, real-format warnings, streaming) |
 | `boss m` | fullscreen Matrix-style digital rain (katakana and digits with fading trails) |
-| `boss h` | fullscreen black hole (glowing accretion disk and falling starfield) |
+| `boss h` | fullscreen black hole (gravitational lensing: a real shadow, a photon ring, starlight bent into arcs) |
 
 Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. The top-level keyword also has the Chinese alias `摸鱼`.
 
@@ -34,6 +34,8 @@ The top-level keyword `boss` comes from plugin.json (a protocol limit — settin
 ## Permissions
 
 It asks for `ui` only: creating fullscreen windows and taking focus. No network, no file access, no subprocesses, no clipboard.
+
+The covers render through D3D11 — the black hole scene is a fragment shader that integrates a geodesic per pixel, and Qt's software rasterizer draws no `ShaderEffect` — so a working D3D11 is required (built into every Windows 10/11).
 
 ## Install
 

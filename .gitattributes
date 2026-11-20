@@ -1,0 +1,2 @@
+# Validation evidence is compared byte for byte; never let git touch a PNG.
+*.png binary
