@@ -15,9 +15,9 @@ The result list stays presentable; the fullscreen part does not.
 | `boss u` | fullscreen Windows Update (spinner stalled at 87%) |
 | `boss t` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
 | `boss m` | fullscreen Matrix-style digital rain (katakana, Latin letters and Chinese with fading trails) |
-| `boss h` | fullscreen black hole (gravitational lensing: a real shadow, a photon ring, starlight bent into arcs) |
+| `boss h` | fullscreen black hole (a transparent lens: the desktop shows through, bent into arcs; a real shadow, a photon ring, the accretion disk) |
 
-Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. The top-level keyword also has the Chinese alias `摸鱼`.
+Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. The top-level keyword also has the Chinese alias `摸鱼`. `boss h` does not hide the desktop: the cover window is transparent, and the desktop shows through, bent into arcs around the hole.
 
 ## Settings
 

@@ -13,7 +13,9 @@ Window {
 
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     title: "WinShunBossKeyCover" // the verify scripts find it by this
-    color: "#000000"
+    // Transparent: the black hole scene lenses the desktop behind it, and every
+    // other scene paints its own opaque fullscreen background.
+    color: "transparent"
 
     // No `visible:` line here: a QML binding re-asserted false over the C++
     // showFullScreen (the window was created fullscreen but stayed invisible).

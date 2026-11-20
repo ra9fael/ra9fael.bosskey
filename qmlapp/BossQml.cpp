@@ -6,6 +6,8 @@
 // showFullScreen + raise: the cover must be up before the boss walks over.
 #include "BossQml.h"
 #include "CoverController.h"
+#include "DesktopProvider.h"
+#include "../logic.h"
 #include "../winshun.h"
 
 #include <QGuiApplication>
@@ -29,6 +31,7 @@ namespace {
 
 QQmlEngine* g_engine = nullptr;
 CoverController* g_controller = nullptr;
+DesktopProvider* g_desktop = nullptr;
 std::vector<QQuickWindow*> g_windows; // one per screen, kept for reuse
 
 QString appDir()
@@ -42,6 +45,8 @@ QQmlEngine* ensureEngine()
         return g_engine;
     g_engine = new QQmlEngine;
     g_engine->addImportPath(appDir() + u"/qml"_s); // QtQuick: WinShun's
+    g_desktop = new DesktopProvider;
+    g_engine->addImageProvider(u"desktop"_s, g_desktop);
     g_controller = new CoverController;
     return g_engine;
 }
@@ -75,6 +80,18 @@ QQuickWindow* coverWindow(QScreen* screen)
     return window;
 }
 
+// Snapshots the rectangle the cover is about to occupy. Taken while every cover
+// window is still hidden: a live grab would capture the cover itself and feed
+// it straight back into the lens.
+void grabDesktop(QScreen* screen, const QRect& shown)
+{
+    if (!g_desktop || !g_controller)
+        return;
+    const QImage image = screen->grabWindow(0, shown.x(), shown.y(), shown.width(), shown.height()).toImage();
+    g_desktop->setSnapshot(QGuiApplication::screens().indexOf(screen), image);
+    g_controller->bumpDesktopEpoch();
+}
+
 bool guiShow(const CoverSpec& spec, std::string& error)
 {
     ensureEngine();
@@ -104,11 +121,16 @@ bool guiShow(const CoverSpec& spec, std::string& error)
             continue;
         window->setScreen(screen);
         const QRect geometry = screen->geometry();
+        const QRect shown = spec.windowed
+            ? QRect(geometry.x(), geometry.y(), 480, 270) : geometry;
+        window->setGeometry(shown);
+        // Only the black hole scene lenses the desktop; the other covers stay
+        // off the grab path so showing one remains instant.
+        if (spec.scene == QLatin1String(kSceneBlackhole))
+            grabDesktop(screen, shown);
         if (spec.windowed) {
-            window->setGeometry(geometry.x(), geometry.y(), 480, 270);
             window->show();
         } else {
-            window->setGeometry(geometry);
             window->showFullScreen();
         }
         ws::win::bringToFront(window); // a user gesture just happened: take the focus

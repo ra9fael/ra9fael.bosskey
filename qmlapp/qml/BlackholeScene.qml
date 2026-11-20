@@ -1,7 +1,7 @@
-// BlackholeScene.qml - a Schwarzschild black hole. Every pixel's null geodesic
-// is integrated in the fragment shader, so the shadow, the photon ring, the
-// disk's upper and lower arcs and the starfield lensed into arcs around it are
-// results, not drawings. Physics and porting notes: docs/blackhole-shader.md.
+// BlackholeScene.qml - a Schwarzschild black hole on a transparent cover: the
+// desktop behind is lensed around the hole, the shadow swallows it, and the
+// accretion disk lights the scene. Every pixel's null geodesic is integrated in
+// the fragment shader. Physics and porting notes: docs/blackhole-shader.md.
 import QtQuick
 
 Item {
@@ -15,12 +15,24 @@ Item {
     property real t: 0
     property real lastTick: 0
 
+    // The desktop snapshot the shader lenses. Invisible: only its texture is
+    // sampled, never drawn. The epoch in the URL makes it reload when a new
+    // snapshot arrives (the window is precreated, long before any snapshot).
+    Image {
+        id: desktop
+        anchors.fill: parent
+        source: "image://desktop/" + root.cover.desktopEpoch + "/" + root.screenIndex
+        cache: false
+        visible: false
+    }
+
     ShaderEffect {
         anchors.fill: parent
 
         property real uAspect: Math.max(0.0001, width / height)
         property real uTime: root.t
         property real uSeed: root.screenIndex * 0.618034
+        property variant uDesktop: desktop
         property real uHoleRadius: 0.125
         property real uDiskInner: 1.8
         property real uDiskOuter: 8.0
@@ -35,7 +47,6 @@ Item {
         property real uDoppler: 0.6
         property real uBeam: 2.2
         property real uOpacity: 0.9
-        property real uStarGain: 1.0
         property real uDilation: 0.35
 
         fragmentShader: "BlackholeScene.frag.qsb"

@@ -44,6 +44,7 @@ qt_add_library(BossKeyApp SHARED
     qmlapp/qmlmain.cpp
     qmlapp/BossQml.cpp
     qmlapp/CoverController.cpp
+    qmlapp/DesktopProvider.cpp
     qmlapp/GccModel.cpp
     "${app_dir}/platform/WindowEffects.cpp" "${app_dir}/platform/WindowEffects.h"
     "${app_dir}/platform/Foreground.cpp" "${app_dir}/platform/Foreground.h"

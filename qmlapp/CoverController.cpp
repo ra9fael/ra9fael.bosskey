@@ -79,6 +79,12 @@ void CoverController::stopCover()
     }
 }
 
+void CoverController::bumpDesktopEpoch()
+{
+    ++m_desktopEpoch;
+    emit desktopEpochChanged();
+}
+
 bool CoverController::keyPressed(const QString& text, int key)
 {
     (void)key; // the sequence is letters and digits only; their e.text carries them
