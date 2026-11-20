@@ -52,13 +52,17 @@ void testSceneMap()
 
     // The default map binds the three documented tokens.
     const auto def = bosskey::defaultSceneMap();
-    expect(def.size() == 4, "default map: four tokens");
+    expect(def.size() == 5, "default map: five tokens");
     expectEq(bosskey::resolveScene(def, "b"), bosskey::kSceneBsod, "resolve: b -> bsod");
     expectEq(bosskey::resolveScene(def, "T"), bosskey::kSceneGcc, "resolve: case-folded");
     expectEq(bosskey::resolveScene(def, "m"), bosskey::kSceneMatrix, "resolve: m -> matrix");
     expect(bosskey::isKnownScene(bosskey::kSceneMatrix), "scene: matrix is known");
-    const auto allScenes = bosskey::parseSceneMap("b=bsod,u=update,t=gcc,m=matrix");
-    expect(allScenes.size() == 4, "map: all four documented scenes parse");
+    expect(bosskey::isKnownScene(bosskey::kSceneBlackhole), "scene: blackhole is known");
+    expectEq(bosskey::resolveScene(def, "h"), bosskey::kSceneBlackhole,
+             "resolve: h -> blackhole");
+    const auto allScenes = bosskey::parseSceneMap(
+        "b=bsod,u=update,t=gcc,m=matrix,h=blackhole");
+    expect(allScenes.size() == 5, "map: all five documented scenes parse");
     expectEq(bosskey::resolveScene(def, "x"), "", "resolve: unbound token");
     expectEq(bosskey::resolveScene(def, ""), "", "resolve: empty word");
     expectEq(bosskey::resolveScene(def, "b u"), "", "resolve: two words refused");

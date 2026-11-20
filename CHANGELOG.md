@@ -7,7 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Add a Matrix-style digital rain cover scene, available as `boss m`.
+- Add Matrix-style digital rain and black hole cover scenes, available as `boss m` and `boss h`.
 
 ## [0.1.1] - 2026-11-20
 

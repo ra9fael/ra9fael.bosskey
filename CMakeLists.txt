@@ -64,7 +64,8 @@ set(bosskey_qml
     "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/BluescreenScene.qml"
     "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/UpdateScene.qml"
     "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/GccScene.qml"
-    "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/MatrixScene.qml")
+    "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/MatrixScene.qml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/BlackholeScene.qml")
 foreach(file IN LISTS bosskey_qml)
     get_filename_component(name "${file}" NAME)
     set_source_files_properties("${file}" PROPERTIES QT_RESOURCE_ALIAS "${name}")

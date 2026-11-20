@@ -22,11 +22,12 @@ constexpr const char* kSceneBsod = "bsod";
 constexpr const char* kSceneUpdate = "update";
 constexpr const char* kSceneGcc = "gcc";
 constexpr const char* kSceneMatrix = "matrix";
+constexpr const char* kSceneBlackhole = "blackhole";
 
 inline bool isKnownScene(const std::string& scene)
 {
     return scene == kSceneBsod || scene == kSceneUpdate || scene == kSceneGcc
-        || scene == kSceneMatrix;
+        || scene == kSceneMatrix || scene == kSceneBlackhole;
 }
 
 inline std::string lower(std::string s)
@@ -93,7 +94,7 @@ inline std::vector<SceneBinding> parseSceneMap(const std::string& text)
 inline std::vector<SceneBinding> defaultSceneMap()
 {
     return {{"b", kSceneBsod}, {"u", kSceneUpdate}, {"t", kSceneGcc},
-            {"m", kSceneMatrix}};
+            {"m", kSceneMatrix}, {"h", kSceneBlackhole}};
 }
 
 // The scene for a query's first word; "" when the word is not bound.

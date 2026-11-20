@@ -25,6 +25,7 @@ Window {
         sourceComponent: root.cover.scene === "bsod" ? bsodScene
                        : root.cover.scene === "update" ? updateScene
                        : root.cover.scene === "matrix" ? matrixScene
+                       : root.cover.scene === "blackhole" ? blackholeScene
                        : gccScene
     }
 
@@ -43,6 +44,10 @@ Window {
     Component {
         id: matrixScene
         MatrixScene { cover: root.cover; screenIndex: root.screenIndex }
+    }
+    Component {
+        id: blackholeScene
+        BlackholeScene { cover: root.cover; screenIndex: root.screenIndex }
     }
 
     // Keys cannot attach to a Window root ("is not an Item"), so a transparent

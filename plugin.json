@@ -4,7 +4,7 @@
   "id": "ra9fael.bosskey",
   "name": {"zh": "老板键", "en": "Boss Key"},
   "version": "0.1.1",
-  "description": "boss 来了：一键全屏伪装成蓝屏 / Windows 更新 / gcc 编译现场 / 黑客帝国代码雨；退出按键序列与自动消失时间可配置。",
+  "description": "boss 来了：一键全屏伪装成蓝屏 / Windows 更新 / gcc 编译现场 / 黑客帝国代码雨 / 黑洞；退出按键序列与自动消失时间可配置。",
   "author": "ra9fael",
   "license": "MIT",
   "minWinShun": "0.22.0",
@@ -26,8 +26,8 @@
       "key": "sceneMap",
       "type": "text",
       "title": {"zh": "子触发词映射", "en": "Sub-trigger map"},
-      "hint": {"zh": "逗号分隔的 子词=场景，场景为 bsod/update/gcc/matrix；如 b=bsod,u=update,t=gcc,m=matrix", "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc/matrix, e.g. b=bsod,u=update,t=gcc,m=matrix"},
-      "default": "b=bsod,u=update,t=gcc,m=matrix"
+      "hint": {"zh": "逗号分隔的 子词=场景，场景为 bsod/update/gcc/matrix/blackhole；如 b=bsod,u=update,t=gcc,m=matrix,h=blackhole", "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc/matrix/blackhole, e.g. b=bsod,u=update,t=gcc,m=matrix,h=blackhole"},
+      "default": "b=bsod,u=update,t=gcc,m=matrix,h=blackhole"
     },
     {
       "key": "exitSequence",
@@ -65,7 +65,7 @@
       "keyword": ["boss", "摸鱼"],
       "title": {"zh": "老板键伪装", "en": "Boss cover"},
       "icon": "glyph:U+ED1A",
-      "hint": {"zh": "b 蓝屏 · u 更新 · t 编译 · m 代码雨；Enter 全屏伪装，键入退出序列返回", "en": "b bluescreen · u update · t build · m Matrix rain; Enter covers the screen, type the exit sequence to return"},
+      "hint": {"zh": "b 蓝屏 · u 更新 · t 编译 · m 代码雨 · h 黑洞；Enter 全屏伪装，键入退出序列返回", "en": "b bluescreen · u update · t build · m Matrix rain · h black hole; Enter covers the screen, type the exit sequence to return"},
       "actions": [
         {"id": "cover", "title": {"zh": "全屏伪装", "en": "Cover the screen"}, "key": "Enter"}
       ]

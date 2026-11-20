@@ -63,6 +63,8 @@ std::string sceneTitle(bool zh, const std::string& scene)
         return tr(zh, "gcc 编译伪装", "gcc build cover");
     if (scene == bosskey::kSceneMatrix)
         return tr(zh, "黑客帝国代码雨", "Matrix digital rain");
+    if (scene == bosskey::kSceneBlackhole)
+        return tr(zh, "黑洞吸积盘", "Black hole accretion disk");
     return scene;
 }
 
@@ -76,7 +78,9 @@ std::string sceneHint(bool zh, const std::string& scene)
         return tr(zh, "gcc -Wall -O2 持续输出", "gcc -Wall -O2 streaming output");
     if (scene == bosskey::kSceneMatrix)
         return tr(zh, "绿色代码流持续滚动", "Green code streams across the screen");
-    return tr(zh, "绿色代码流持续滚动", "Green code streams across the screen");
+    if (scene == bosskey::kSceneBlackhole)
+        return tr(zh, "星流被吸入黑洞", "A starfield spirals into a black hole");
+    return tr(zh, "gcc -Wall -O2 持续输出", "gcc -Wall -O2 streaming output");
 }
 
 winshun::Item makeSceneRow(bool zh,
@@ -93,7 +97,8 @@ winshun::Item makeSceneRow(bool zh,
                        : " · auto-dismiss in " + secs + "s";
     }
     winshun::Item row("cover:" + token, sceneTitle(zh, scene), subtitle);
-    const char* color = scene == bosskey::kSceneMatrix ? "#16A34A"
+    const char* color = scene == bosskey::kSceneBlackhole ? "#D97706"
+                      : scene == bosskey::kSceneMatrix ? "#16A34A"
                       : scene == bosskey::kSceneGcc ? "#4EC9B0"
                       : scene == bosskey::kSceneUpdate ? "#2F6FED"
                       : "#0078D7";
