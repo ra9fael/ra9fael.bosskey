@@ -79,7 +79,7 @@ std::string sceneHint(bool zh, const std::string& scene)
     if (scene == bosskey::kSceneMatrix)
         return tr(zh, "绿色代码流持续滚动", "Green code streams across the screen");
     if (scene == bosskey::kSceneBlackhole)
-        return tr(zh, "星流被吸入黑洞", "A starfield spirals into a black hole");
+        return tr(zh, "星光被引力透镜弯成弧线", "Starlight lensed into arcs around the hole");
     return tr(zh, "gcc -Wall -O2 持续输出", "gcc -Wall -O2 streaming output");
 }
 

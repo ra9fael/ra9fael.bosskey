@@ -189,10 +189,13 @@ inline int sceneRestartAfterSec(const std::string& scene)
 
 // ---- the gcc log ------------------------------------------------------------
 
-// A believable `gcc -Wall -O2` build: CMake's progress lines, gcc warnings in
-// the real format, a link step, an end. Deterministic in the seed, so a test
-// can pin it; the model bumps the seed for each loop with a different shape.
-inline std::vector<std::string> gccLog(const std::string& project, unsigned seed)
+// One pass of an endless build log: `total` translation units with the percent
+// climbing, warnings in the real format, and a CMake regeneration at the end
+// instead of a link step. The gcc scene streams pass after pass for as long as
+// the cover is up, so a pass never reaches 100% and never links — a build that
+// finishes would give the game away. Pass 0 opens with the invocation; later
+// passes continue where the previous regeneration left off.
+inline std::vector<std::string> gccLog(const std::string& project, unsigned seed, int pass = 0)
 {
     struct Step {
         unsigned n;     // source-file pool index (mod the pool size)
@@ -210,14 +213,6 @@ inline std::vector<std::string> gccLog(const std::string& project, unsigned seed
                                         "suggest parentheses around comparison in operand of ‘==’ [-Wparentheses]"};
 
     std::vector<std::string> lines;
-    lines.push_back("$ ninja -C build");
-    lines.push_back("ninja: Entering directory `build'");
-    lines.push_back("[1/2] Regenerating build files (CMake)");
-    lines.push_back("-- The CXX compiler identification is GNU 13.2.0");
-    lines.push_back("-- Configuring done");
-    lines.push_back("-- Generating done");
-    lines.push_back("[2/2] Building all targets");
-
     const std::string target = project.empty() ? "app" : project;
     unsigned state = seed ? seed : 1u;
     auto next = [&state](unsigned mod) {
@@ -225,17 +220,26 @@ inline std::vector<std::string> gccLog(const std::string& project, unsigned seed
         return state % mod;
     };
 
-    int done = 0;
-    const int total = 24;
+    if (pass <= 0) {
+        lines.push_back("$ ninja -C build");
+        lines.push_back("ninja: Entering directory `build'");
+        lines.push_back("[1/2] Regenerating build files (CMake)");
+        lines.push_back("-- The CXX compiler identification is GNU 13.2.0");
+        lines.push_back("-- Configuring done");
+        lines.push_back("-- Generating done");
+        lines.push_back("[2/2] Building all targets");
+    }
+
+    const int total = 64; // units per pass; the percent tops out just under 100
     for (int i = 0; i < total; ++i) {
         const std::string dir = dirs[next(5)];
         const std::string unit = units[next(15)];
         const std::string file = dir + "/" + unit + ".cpp";
-        ++done;
-        lines.push_back("[" + std::to_string(done * 100 / total) + "%] "
+        const int done = i + 1;
+        lines.push_back("[" + std::to_string(done * 98 / total) + "%] "
                         + (next(4) == 0 ? "Building C object " : "Building CXX object ")
                         + "CMakeFiles/" + target + ".dir/" + file + ".o");
-        if (const int warned = next(10); warned < 3) { // about three warnings per run
+        if (const int warned = next(10); warned < 3) { // about three warnings per ten units
             char buf[160];
             const int line = 12 + static_cast<int>(next(180));
             std::snprintf(buf, sizeof buf, "%s:%d:%d: warning: ", file.c_str(), line, 5 + static_cast<int>(next(20)));
@@ -254,9 +258,11 @@ inline std::vector<std::string> gccLog(const std::string& project, unsigned seed
             lines.push_back(text);
         }
     }
-    lines.push_back("[100%] Linking CXX executable " + target + ".exe");
-    lines.push_back("[100%] Built target " + target);
-    lines.push_back("$ _");
+    // CMake noticed a changed list mid-build: the run restarts instead of
+    // linking, and the next pass picks the count up from the bottom again.
+    lines.push_back("[1/1] Re-running CMake...");
+    lines.push_back("-- Configuring done");
+    lines.push_back("-- Generating done");
     return lines;
 }
 

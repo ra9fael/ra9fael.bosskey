@@ -52,13 +52,9 @@ void CoverController::applySpec(const CoverSpec& spec)
     m_percent = 0;
     emit percentChanged();
 
-    if (m_scene == QLatin1String(kSceneGcc)) {
-        const unsigned seed = static_cast<unsigned>(QDateTime::currentMSecsSinceEpoch() & 0x7fffffffu) | 1u;
-        QStringList lines;
-        for (const std::string& line : gccLog(spec.gccProject, seed))
-            lines.push_back(QString::fromStdString(line));
-        m_gcc->resetLog(lines);
-    }
+    if (m_scene == QLatin1String(kSceneGcc))
+        m_gcc->resetLog(m_project,
+                        static_cast<unsigned>(QDateTime::currentMSecsSinceEpoch() & 0x7fffffffu) | 1u);
 }
 
 void CoverController::startCover()

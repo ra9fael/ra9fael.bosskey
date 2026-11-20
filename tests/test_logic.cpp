@@ -147,17 +147,29 @@ void testPercent()
 void testGccLog()
 {
     const auto log = bosskey::gccLog("winshun-core", 12345);
-    expect(log.size() > 20, "gcc: a full build's worth of lines");
+    expect(log.size() > 20, "gcc: a build pass's worth of lines");
     expect(log.front().find("ninja") != std::string::npos, "gcc: starts at the invocation");
-    expect(log.back().find("$") != std::string::npos, "gcc: ends at a prompt");
+    expect(log.size() >= 3 && log[log.size() - 3].find("Re-running CMake") != std::string::npos
+               && log.back() == "-- Generating done",
+           "gcc: hands over to the next pass instead of linking");
 
     bool linked = false;
     std::size_t warnings = 0;
+    int topPercent = 0;
+    bool hundred = false;
     for (const std::string& line : log) {
-        linked = linked || line.find("Built target winshun-core") != std::string::npos;
+        linked = linked || line.find("Built target") != std::string::npos
+                        || line.find("Linking") != std::string::npos;
         warnings += line.find("warning:") != std::string::npos;
+        if (line.find('[') == 0) {
+            const int percent = std::atoi(line.c_str() + 1);
+            topPercent = std::max(topPercent, percent);
+            hundred = hundred || percent >= 100;
+        }
     }
-    expect(linked, "gcc: links the configured target");
+    expect(!linked, "gcc: never links: the build has no end");
+    expect(!hundred, "gcc: a pass never reaches 100%");
+    expect(topPercent > 90, "gcc: a pass climbs deep before it hands over");
     expect(warnings >= 1, "gcc: at least one warning");
 
     // Deterministic in the seed; different seeds differ.
@@ -170,6 +182,28 @@ void testGccLog()
     expect(bosskey::gccLog("winshun-core", 999).size() != log.size()
                || bosskey::gccLog("other", 12345) != log,
            "gcc: seed or project changes the log");
+
+    // Only the first pass carries the invocation; later ones continue the build.
+    const auto next = bosskey::gccLog("winshun-core", 12345, 1);
+    expect(next.front().find("ninja") == std::string::npos, "gcc: a later pass has no header");
+    expect(next.size() >= 3 && next[next.size() - 3].find("Re-running CMake") != std::string::npos
+               && next.back() == "-- Generating done",
+           "gcc: a later pass also hands over");
+
+    // The log streams for as long as the cover is up: pass after pass, and not
+    // one line claims the build is done.
+    bool everFinished = false;
+    for (int pass = 0; pass < 40 && !everFinished; ++pass) {
+        for (const std::string& line : bosskey::gccLog("winshun-core", 12345, pass)) {
+            if (line.find("Built target") != std::string::npos
+                || line.find("Linking") != std::string::npos
+                || line.find("100%") != std::string::npos) {
+                everFinished = true;
+                break;
+            }
+        }
+    }
+    expect(!everFinished, "gcc: no pass ever finishes the build");
 
     // An empty project name falls back to a safe target.
     expect(bosskey::gccLog("", 7).size() > 20, "gcc: empty project still builds");

@@ -8,11 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Add Matrix-style digital rain and black hole cover scenes, available as `boss m` and `boss h`.
+- The Matrix rain mixes halfwidth katakana with digits, Latin letters and Chinese, so a column reads as code in either script; wide glyphs are centred in their cell to keep the column pitch even.
 
 ### Changed
 
 - The black hole scene is a fragment shader: every pixel's null geodesic is integrated through the Schwarzschild metric (`a = -(3/2) h² x / r⁵`, 48 leapfrog steps), so the shadow, the photon ring, the accretion disk's upper and lower arcs and the starfield lensed into arcs around the hole are results of the integration rather than drawings. Ported from XboxNahida/ghostty-blackhole-main, after Eric Bruneton's black hole shader; the analysis and the porting notes are in docs/blackhole-shader.md.
 - The covers render on Qt's D3D11 backend. Qt's software rasterizer draws no `ShaderEffect` at all — it skips it silently, which would leave `boss h` a black screen — so the software path and the `BOSSKEY_RENDERER` switch are gone. `runtime.memoryMB` rises from 128 to 1024 for the swapchains and texture atlases (91.8 MB private commit measured fullscreen at 1920×1080 on one display).
+- The gcc scene's log never ends: it streams build pass after pass, and a pass hands over to the next through a CMake regeneration instead of linking, so the percent climbs to 96%, restarts, and the screen keeps moving for as long as the cover is up. Long lines wrap at the window edge the way a real terminal does.
 
 ## [0.1.1] - 2026-11-20
 
