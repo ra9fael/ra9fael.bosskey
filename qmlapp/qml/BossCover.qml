@@ -13,8 +13,9 @@ Window {
 
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     title: "WinShunBossKeyCover" // the verify scripts find it by this
-    // Transparent: the black hole scene lenses the desktop behind it, and every
-    // other scene paints its own opaque fullscreen background.
+    // Transparent window, opaque scenes: every scene paints its own fullscreen
+    // background (the black hole paints a dark sky), so nothing of the desktop
+    // shows through any of them.
     color: "transparent"
 
     // No `visible:` line here: a QML binding re-asserted false over the C++
@@ -63,5 +64,42 @@ Window {
                 event.accepted = true
         }
         Component.onCompleted: forceActiveFocus()
+    }
+
+    Rectangle {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 12
+        width: protectionLabel.implicitWidth + 16
+        height: protectionLabel.implicitHeight + 10
+        radius: 4
+        color: "#cc151515"
+        visible: root.cover.shown && protectionTimer.running
+        Text {
+            id: protectionLabel
+            anchors.centerIn: parent
+            color: "#eeeeee"
+            font.pixelSize: 12
+            text: root.cover.enhanced
+                ? (root.cover.zh ? qsTr("增强防护") : qsTr("Enhanced protection"))
+                : (root.cover.zh ? qsTr("普通模式") : qsTr("Ordinary mode"))
+        }
+    }
+    Timer {
+        id: protectionTimer
+        interval: 4000
+    }
+    Connections {
+        target: root.cover
+        function onShownChanged() {
+            if (root.cover.shown)
+                protectionTimer.restart()
+            else
+                protectionTimer.stop()
+        }
+        function onProtectionChanged() {
+            if (root.cover.shown)
+                protectionTimer.restart()
+        }
     }
 }

@@ -11,6 +11,7 @@ CMakeFiles/
 # with CMake; see README. BossKeyApp.dll sits beside it (the same convention;
 # the host's Qt runs it).
 bosskey.exe
+bosskey-guard.exe
 BossKeyApp.dll
 
 dist/

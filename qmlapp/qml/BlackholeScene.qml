@@ -1,5 +1,5 @@
-// BlackholeScene.qml - a Schwarzschild black hole on a transparent cover: the
-// desktop behind is lensed around the hole, the shadow swallows it, and the
+// BlackholeScene.qml - a Schwarzschild black hole over a dark sky: the dust and
+// stars behind it are lensed around the hole, the shadow swallows them, and the
 // accretion disk lights the scene. Every pixel's null geodesic is integrated in
 // the fragment shader. Physics and porting notes: docs/blackhole-shader.md.
 import QtQuick
@@ -16,11 +16,17 @@ Item {
 
     // Bounded Brownian motion in normalized screen coordinates. The filtered
     // velocity keeps it wandering rather than jittering; the soft spring keeps
-    // it near the centre of the captured desktop.
+    // it near the centre of the frame.
     property real walkX: 0
     property real walkY: 0
     property real velocityX: 0
     property real velocityY: 0
+
+    // The dark base tone, sky detail level, and corner darkening. The opaque sky
+    // keeps desktop content out of the scene entirely.
+    readonly property color skyTone: "#02040a"
+    readonly property real skyGain: 0.35
+    readonly property real vignette: 0.55
 
     readonly property real introHold: 0.8
     readonly property real seedDuration: 0.6
@@ -37,15 +43,10 @@ Item {
     readonly property real diskProgress: smootherstep((t - introHold) / diskDuration)
     readonly property real holeProgress: smootherstep((t - holeStart) / holeDuration)
 
-    // The desktop snapshot the shader lenses. Invisible: only its texture is
-    // sampled, never drawn. The epoch in the URL makes it reload when a new
-    // snapshot arrives (the window is precreated, long before any snapshot).
-    Image {
-        id: desktop
+    // Opaque from the first frame, including while the shader initializes.
+    Rectangle {
         anchors.fill: parent
-        source: "image://desktop/" + root.cover.desktopEpoch + "/" + root.screenIndex
-        cache: false
-        visible: false
+        color: root.skyTone
     }
 
     ShaderEffect {
@@ -55,7 +56,11 @@ Item {
         property real uTime: root.t
         property real uCenterX: root.walkX
         property real uCenterY: root.walkY
-        property variant uDesktop: desktop
+        property color uSky: root.skyTone
+        property real uBgGain: root.skyGain
+        property real uVignette: root.vignette
+        // The glow only starts with the disk: nothing is burning at the seed.
+        property real uBloom: root.diskProgress
 
         // First a small seed appears, then the disk spreads to 18 r_s while the
         // shadow stays small. Only after the disk is established does the shadow
@@ -67,17 +72,17 @@ Item {
         property real uDiskOuter: root.t < root.holeStart
                                   ? 5.0 + (18.0 - 5.0) * root.diskProgress
                                   : 18.0 + (8.0 - 18.0) * root.holeProgress
-        property real uGain: 0.06 + (1.1 - 0.06) * root.diskProgress
+        property real uGain: 0.06 + (0.75 - 0.06) * root.diskProgress
         property real uTemp: 2900 + (4200 - 2900) * root.diskProgress
         property real uIncl: 1.45
         property real uRoll: 0.35
-        property real uExposure: 1.0
+        property real uExposure: 1.15
         property real uSpeed: 5.0
         property real uWind: 7.0
-        property real uContrast: 1.6
+        property real uContrast: 2.0
         property real uDoppler: 0.6
         property real uBeam: 2.2
-        property real uOpacity: 0.9
+        property real uOpacity: 0.95
         property real uDilation: 0.35
 
         fragmentShader: "BlackholeScene.frag.qsb"

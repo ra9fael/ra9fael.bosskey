@@ -2,7 +2,7 @@
 
 [English](README.en.md) | 中文
 
-boss 来了？输入 `boss bsod`，屏幕瞬间变成蓝屏。`boss update` 是 Windows 更新，`boss gcc` 是一条正在编译的 gcc，`boss matrix` 是黑客帝国代码雨，`boss blackhole` 是黑洞吸积盘。键入退出按键序列（默认 `deadbeef`）回来——或者等它自己消失。
+boss 来了？输入 `boss bsod`，授权后屏幕变成蓝屏。`boss update` 是 Windows 更新，`boss gcc` 是一条正在编译的 gcc，`boss matrix` 是黑客帝国代码雨，`boss blackhole` 是黑洞吸积盘。键入退出按键序列（默认 `deadbeef`）回来——或者等它自己消失。
 
 WinShun 的结果列表里保持体面；全屏的部分不体面。
 
@@ -15,11 +15,11 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 | `boss update` / `gengxin` / `gx` | 全屏 Windows 更新（spinner 卡在 87%） |
 | `boss gcc` / `bianyi` / `by` | 全屏 gcc 编译（`-Wall -O2`，真实格式的警告，长行换行，永远编译不到 100%） |
 | `boss matrix` / `daimayu` / `dmy` | 全屏黑客帝国代码雨（片假名、数字与拉丁字母，绿色渐隐轨迹） |
-| `boss blackhole` / `heidong` / `hd` | 全屏黑洞（透明透镜：桌面透出并被引力透镜扭曲；开场先清屏，吸积盘先铺开、黑洞随后长大，之后随机游走） |
+| `boss blackhole` / `heidong` / `hd` | 全屏黑洞（不透明星空被引力透镜扭曲；吸积盘先铺开、黑洞随后长大，之后随机游走） |
 
-回车触发全屏伪装；伪装期间所有按键都被吞掉、不产生任何显示，键入退出按键序列即返回。每个场景认三个词：英文全称、中文全拼、拼音首字母（`boss hd` 等于 `boss heidong` 等于 `boss blackhole`），搜索结果里每一行都列着这三个词；想换别的词在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。
+回车启动伪装并请求一次 UAC；允许后启用增强防护，拒绝或守卫启动失败则使用普通模式，键入退出按键序列即返回。每个场景认三个词：英文全称、中文全拼、拼音首字母（`boss hd` 等于 `boss heidong` 等于 `boss blackhole`），搜索结果里每一行都列着这三个词；想换别的词在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。
 
-`boss blackhole` 不隐藏桌面：封面窗口是透明的，桌面从洞里绕出来、被弯成弧线显示。开场会先按 Win+D 的语义把窗口收起来、退出时还原，所以镜头里是壁纸和桌面图标，而不是你正在读的窗口。
+`boss blackhole` 绘制不透明的程序化星空，不采集桌面、不最小化其他窗口。引力透镜弯曲星空，黑洞阴影保持纯黑。
 
 ## 设置
 
@@ -35,7 +35,11 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 ## 权限
 
-只申请 `ui`：需要创建全屏窗口并抢焦点。不联网、不读写文件、不起子进程、不读剪贴板。
+申请 `ui` 和 `processes`：创建伪装窗口，由宿主启动包内固定的 `bosskey-guard.exe`。新增权限需要在 WinShun 中确认，插件主体仍为 `sandbox: strict`，不随守卫提权。
+
+每次启动伪装先等待 UAC 结果与守卫就绪，再显示封面。允许后，独立管理员守卫抑制字母数字与约定快捷键，并在失焦时匹配退出序列；拒绝或启动失败只回退普通模式，不重复请求。右下角短暂显示“增强防护”或“普通模式”。普通模式不保证失焦后的跨权限按键抑制。
+
+守卫不加载 QML、不接受任意程序或命令、不保存或转发逐键输入；通信只有就绪、退出、停止与错误状态。封面关闭时处理已吞按键的释放；插件退出、崩溃或管道断开后守卫退出，不常驻。增强防护不替代 Windows 锁屏，也不能拦截 Ctrl+Alt+Del 等安全注意序列。
 封面跑在 D3D11 上（黑洞场景是逐像素积分测地线的 fragment shader，Qt 的软件光栅画不出
 `ShaderEffect`），需要可用的 D3D11——Windows 10/11 均内置。
 
@@ -43,7 +47,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 需要 WinShun **0.22.0 或更新**（插件声明了宿主的共享 Qt 契约 `runtime.qt: "host"`，复用 WinShun 的 Qt 6.12，包内不含 Qt）。两种安装方式：
 
-- 双击 `dist/ra9fael.bosskey-0.1.0.wsplugin`，WinShun 会引导安装；
+- 双击 `dist/ra9fael.bosskey-0.1.2.wsplugin`，WinShun 会引导安装；
 - 或 WinShun 里「插件 → 从归档安装」。
 
 ## 从源码构建
@@ -55,10 +59,10 @@ Windows + MSVC + Ninja + Qt 6（与 WinShun 同源）：
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=<Qt 的 msvc 目录>
 cmake --build build
 ctest --test-dir build          # 纯逻辑单测
-python tools/package.py         # dist/ra9fael.bosskey-0.1.0.wsplugin
+python tools/package.py         # dist/ra9fael.bosskey-0.1.2.wsplugin
 ```
 
-产物：源码目录下的 `bosskey.exe`（无 Qt 启动器）和 `BossKeyApp.dll`（QML 伪装窗口，协议层与界面层分离，架构同官方 capture 插件）。
+产物：源码目录下的 `bosskey.exe`（无 Qt 启动器）、`BossKeyApp.dll`（QML 伪装窗口）和 `bosskey-guard.exe`（无 Qt、静态 CRT 的可选管理员输入守卫）。
 
 场景可以脱离 WinShun 单看：
 

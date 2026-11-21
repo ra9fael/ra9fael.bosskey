@@ -18,6 +18,20 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick ShaderToolsTools)
 qt_policy(SET QTP0001 NEW)
 
 add_executable(bosskey qmlapp/stub/main.cpp bosskey.rc)
+add_executable(bosskey-guard WIN32 qmlapp/guard/main.cpp qmlapp/input/KeyboardHook.cpp bosskey.rc)
+target_compile_definitions(bosskey-guard PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN BOSSKEY_INPUT_GUARD)
+target_link_libraries(bosskey-guard PRIVATE user32 advapi32 shell32 ole32)
+set_target_properties(bosskey-guard PROPERTIES AUTOMOC OFF RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
+foreach(config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+    set_target_properties(bosskey-guard PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${config} "${CMAKE_SOURCE_DIR}")
+endforeach()
+if(MSVC)
+    target_compile_options(bosskey-guard PRIVATE /utf-8 /W4 /permissive-)
+    set_target_properties(bosskey-guard PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    target_compile_options(bosskey-guard PRIVATE -finput-charset=UTF-8 -fexec-charset=UTF-8 -Wall -Wextra)
+    target_link_options(bosskey-guard PRIVATE -static -static-libgcc -static-libstdc++ -municode)
+endif()
 target_compile_definitions(bosskey PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
 # Beside BossKeyApp.dll, where plugin.json's runtime.program points.
 set_target_properties(bosskey PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
@@ -43,8 +57,10 @@ qt_add_library(BossKeyApp SHARED
     bosskey-icons.qrc
     qmlapp/qmlmain.cpp
     qmlapp/BossQml.cpp
+    qmlapp/CoverInput.cpp
+    qmlapp/EnhancedInput.cpp
+    qmlapp/input/KeyboardHook.cpp
     qmlapp/CoverController.cpp
-    qmlapp/DesktopProvider.cpp
     qmlapp/GccModel.cpp
     "${app_dir}/platform/WindowEffects.cpp" "${app_dir}/platform/WindowEffects.h"
     "${app_dir}/platform/Foreground.cpp" "${app_dir}/platform/Foreground.h"
@@ -125,3 +141,13 @@ endforeach()
 
 enable_testing()
 add_test(NAME bosskey_logic COMMAND bosskey_tests)
+
+add_executable(bosskey_input_tests tests/test_input.cpp)
+target_include_directories(bosskey_input_tests PRIVATE "${CMAKE_SOURCE_DIR}")
+target_compile_definitions(bosskey_input_tests PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_link_libraries(bosskey_input_tests PRIVATE advapi32)
+set_target_properties(bosskey_input_tests PROPERTIES AUTOMOC OFF)
+if(MSVC)
+    target_compile_options(bosskey_input_tests PRIVATE /utf-8 /W4 /permissive-)
+endif()
+add_test(NAME bosskey_input COMMAND bosskey_input_tests)

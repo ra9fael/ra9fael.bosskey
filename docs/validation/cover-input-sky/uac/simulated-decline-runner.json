@@ -1,0 +1,32 @@
+{
+  "runner": "C:\\Program Files\\WinShun\\WinShunPluginHost.exe",
+  "strict": true,
+  "cover_integrity": 4096,
+  "cover_token": {
+    "integrity": 4096,
+    "restricted": true,
+    "ui_access": false
+  },
+  "cover_rect": [
+    0,
+    0,
+    480,
+    270
+  ],
+  "exe": "C:\\Users\\renfei\\AppData\\Local\\Temp\\opencode\\bosskey-uac-input\\bosskey.exe",
+  "guard_error_simulated": 1223,
+  "helpers": [],
+  "enhanced_mode_seen": false,
+  "exit_code": 0,
+  "stderr": [
+    "bosskey: guard-launch={\"args\":\"--session 8f3587f4-76fc-46c7-8a6a-5cca6c373ff3 --owner 88492 --sequence deadbeef\",\"path\":\"C:/Users/renfei/AppData/Local/Temp/opencode/bosskey-uac-input/bosskey-guard.exe\"}",
+    "bosskey: enhanced input unavailable (1223); using ordinary mode",
+    "ra9fael.bosskey: cover shown, scene=blackhole, screens=1, protection=ordinary",
+    "bosskey: exit source=native mode=ordinary"
+  ],
+  "native_exit_seen": true,
+  "qml_exit_seen": false,
+  "guard_launch_requests": 1,
+  "helpers_exited_after_hide": true,
+  "native_unfocused_exit_verified": false
+}

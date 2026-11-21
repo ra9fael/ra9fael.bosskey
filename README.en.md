@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-Boss incoming? Type `boss bsod` and the screen instantly turns into a bluescreen. `boss update` is Windows Update, `boss gcc` is a gcc build in progress, `boss matrix` is Matrix-style digital rain, and `boss blackhole` is a black hole. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
+Boss incoming? Type `boss bsod` to open a bluescreen after the consent step. `boss update` is Windows Update, `boss gcc` is a gcc build in progress, `boss matrix` is Matrix-style digital rain, and `boss blackhole` is a black hole. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
 
 The result list stays presentable; the fullscreen part does not.
 
@@ -15,11 +15,11 @@ The result list stays presentable; the fullscreen part does not.
 | `boss update` / `gengxin` / `gx` | fullscreen Windows Update (spinner stalled at 87%) |
 | `boss gcc` / `bianyi` / `by` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
 | `boss matrix` / `daimayu` / `dmy` | fullscreen Matrix-style digital rain (katakana, digits and Latin letters with fading trails) |
-| `boss blackhole` / `heidong` / `hd` | fullscreen black hole (a transparent lens: the desktop shows through, bent into arcs; it clears the screen first, the disk spreads before the hole grows, then the hole wanders) |
+| `boss blackhole` / `heidong` / `hd` | fullscreen black hole (an opaque star field bent into arcs; the disk spreads before the hole grows, then the hole wanders) |
 
-Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. Each scene answers to three words: its English name, the full Mandarin pinyin and the pinyin initials (`boss hd` = `boss heidong` = `boss blackhole`), and every search result row lists them; any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
+Press Enter to request UAC once and start the cover. Accepting enables enhanced protection; declining or a guard startup failure selects ordinary mode. Type the exit key sequence to return. Each scene answers to three words: its English name, the full Mandarin pinyin and the pinyin initials (`boss hd` = `boss heidong` = `boss blackhole`), and every search result row lists them; any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
 
-`boss blackhole` does not hide the desktop: the cover window is transparent, and the desktop shows through, bent into arcs around the hole. It first clears the screen the way Win+D does and puts the windows back on exit, so the lens bends the wallpaper and the desktop icons rather than whatever you were reading.
+`boss blackhole` paints an opaque procedural star field. It neither captures the desktop nor minimizes other windows. The lens bends the stars around a pure-black shadow.
 
 ## Settings
 
@@ -35,7 +35,11 @@ The top-level keyword `boss` comes from plugin.json (a protocol limit — settin
 
 ## Permissions
 
-It asks for `ui` only: creating fullscreen windows and taking focus. No network, no file access, no subprocesses, no clipboard.
+It requests `ui` and `processes`: it creates the cover windows and asks the host to start the fixed, bundled `bosskey-guard.exe`. WinShun requires confirmation of the added permission. The plugin itself remains in `sandbox: strict`; only the separate input guard requests elevation.
+
+Each cover start requests UAC once, before showing the cover. Accepting enables enhanced protection after the guard is ready; declining or a startup failure selects ordinary mode without another prompt. A brief bottom-right label identifies the mode. The enhanced guard suppresses letters, digits and the supported shell shortcuts and matches the exit sequence without focus. Ordinary mode does not guarantee suppression across integrity levels when focus is lost.
+
+The guard loads no QML, accepts no arbitrary program or command, and neither stores nor forwards individual keystrokes. Its pipe carries only readiness, exit, stop and error states. Closing the cover drains swallowed-key releases; plugin exit, a crash or pipe disconnection ends the guard. This cover is not a Windows lock screen and cannot block secure attention sequences such as Ctrl+Alt+Del.
 
 The covers render through D3D11 — the black hole scene is a fragment shader that integrates a geodesic per pixel, and Qt's software rasterizer draws no `ShaderEffect` — so a working D3D11 is required (built into every Windows 10/11).
 
@@ -43,7 +47,7 @@ The covers render through D3D11 — the black hole scene is a fragment shader th
 
 Requires **WinShun 0.22.0 or later** (the plugin declares the host's shared-Qt contract, `runtime.qt: "host"`, and reuses WinShun's Qt 6.12; no Qt is bundled). Either way:
 
-- double-click `dist/ra9fael.bosskey-0.1.0.wsplugin` and WinShun walks you through it;
+- double-click `dist/ra9fael.bosskey-0.1.2.wsplugin` and WinShun walks you through it;
 - or in WinShun: Plugins → Install from archive.
 
 ## Building from source
@@ -55,10 +59,10 @@ Windows + MSVC + Ninja + Qt 6 (the same source WinShun uses):
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=<Qt's msvc dir>
 cmake --build build
 ctest --test-dir build          # pure-logic tests
-python tools/package.py         # dist/ra9fael.bosskey-0.1.0.wsplugin
+python tools/package.py         # dist/ra9fael.bosskey-0.1.2.wsplugin
 ```
 
-Outputs: `bosskey.exe` (a Qt-less starter) and `BossKeyApp.dll` (the QML cover; protocol and UI are separate, the same architecture as the official capture plugin).
+Outputs: `bosskey.exe` (a Qt-less starter), `BossKeyApp.dll` (the QML cover), and `bosskey-guard.exe` (the optional elevated input guard, without Qt and with a static CRT).
 
 The scenes can be checked without WinShun:
 

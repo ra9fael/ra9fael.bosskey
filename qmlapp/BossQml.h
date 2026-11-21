@@ -7,6 +7,7 @@
 #include <string>
 
 #include "CoverController.h"
+#include "EnhancedInput.h"
 
 namespace bosskey {
 
@@ -20,10 +21,12 @@ struct CoverSpec {
     bool windowed = false;    // preview only: small window on one screen
     int previewScreen = -1;   // preview screen index; -1 selects the primary screen
     bool zh = true;
+    bool enhanced = false;    // host launches the separate consent helper
+    bool nativeInput = true;  // preview can isolate the focused QML fallback
 };
 
 // Shows the cover (creates the windows on first use). False with an error.
-bool showCover(const CoverSpec& spec, std::string& error);
+bool showCover(const CoverSpec& spec, std::string& error, GuardLaunch* launch = nullptr);
 
 // The plugin protocol loop (main.cpp's mapping), run on the worker thread.
 int runServeLoop();

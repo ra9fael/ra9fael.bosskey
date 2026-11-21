@@ -1,0 +1,37 @@
+{
+  "runner": "C:\\Program Files\\WinShun\\WinShunPluginHost.exe",
+  "strict": true,
+  "runner_integrity": 12288,
+  "cover_integrity": 4096,
+  "cover_token": {
+    "integrity": 4096,
+    "restricted": true,
+    "ui_access": false
+  },
+  "cover_rect": [
+    0,
+    0,
+    480,
+    270
+  ],
+  "exe": "C:\\Users\\renfei\\AppData\\Local\\Temp\\opencode\\bosskey-uac-input\\bosskey.exe",
+  "guard_error_simulated": null,
+  "helpers": [
+    {
+      "pid": 88684,
+      "integrity": 12288
+    }
+  ],
+  "enhanced_mode_seen": true,
+  "exit_code": 0,
+  "stderr": [
+    "bosskey: guard-launch={\"args\":\"--session 48898426-1299-4d93-8cd1-b2d80716af74 --owner 80032 --sequence deadbeef\",\"path\":\"C:/Users/renfei/AppData/Local/Temp/opencode/bosskey-uac-input/bosskey-guard.exe\"}",
+    "ra9fael.bosskey: cover shown, scene=blackhole, screens=1, protection=enhanced",
+    "bosskey: exit source=native mode=enhanced"
+  ],
+  "native_exit_seen": true,
+  "qml_exit_seen": false,
+  "guard_launch_requests": 1,
+  "helpers_exited_after_hide": true,
+  "native_unfocused_exit_verified": true
+}

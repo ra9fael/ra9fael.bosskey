@@ -1,0 +1,26 @@
+{
+  "runner": "C:\\Program Files\\WinShun\\WinShunPluginHost.exe",
+  "strict": true,
+  "runner_integrity": 8192,
+  "cover_integrity": 4096,
+  "cover_token": {
+    "integrity": 4096,
+    "restricted": true,
+    "ui_access": false
+  },
+  "cover_rect": [
+    0,
+    0,
+    480,
+    270
+  ],
+  "exe": "C:\\Users\\renfei\\AppData\\Local\\Temp\\opencode\\bosskey-uac-input\\bosskey.exe",
+  "exit_code": 0,
+  "stderr": [
+    "ra9fael.bosskey: cover shown, scene=blackhole, screens=1, protection=ordinary",
+    "bosskey: exit source=qml"
+  ],
+  "native_exit_seen": false,
+  "qml_exit_seen": true,
+  "native_unfocused_exit_verified": false
+}

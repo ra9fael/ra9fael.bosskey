@@ -1,0 +1,57 @@
+{
+  "cover_rect": [
+    0,
+    0,
+    480,
+    270
+  ],
+  "cover_integrity": 4096,
+  "shortcuts": [
+    {
+      "name": "Ctrl+Shift+Esc",
+      "passed": true
+    },
+    {
+      "name": "Shift+F10",
+      "passed": true
+    },
+    {
+      "name": "Ctrl+Shift+Esc repeated",
+      "passed": true
+    },
+    {
+      "name": "Shift+F10 repeated",
+      "passed": true
+    },
+    {
+      "name": "Alt+Tab",
+      "passed": true
+    },
+    {
+      "name": "Alt+Esc",
+      "passed": true
+    },
+    {
+      "name": "Alt+F4",
+      "passed": true
+    },
+    {
+      "name": "Win+D",
+      "passed": true
+    },
+    {
+      "name": "Win+R",
+      "passed": true
+    },
+    {
+      "name": "Win",
+      "passed": true
+    }
+  ],
+  "target_integrity": 8192,
+  "focus_removed": true,
+  "exit_without_focus": true,
+  "received_characters": 0,
+  "Win+R_restored_after_hide": true,
+  "accepted": true
+}

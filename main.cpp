@@ -164,11 +164,18 @@ class BossKeyPlugin final : public winshun::Plugin {
         spec.gccProject = st.gccProject;
         spec.allScreens = st.allScreens;
         spec.zh = zh;
+        spec.enhanced = true;
         std::string error;
-        if (!bosskey::showCover(spec, error)) {
+        bosskey::GuardLaunch launch;
+        if (!bosskey::showCover(spec, error, &launch)) {
             winshun::debug("ra9fael.bosskey: cover failed: " + error);
             return {winshun::effect::notify(tr(zh, "无法打开伪装窗口：", "Could not open the cover: ") + error),
                     winshun::effect::hide()};
+        }
+        if (!launch.program.empty()) {
+            return {winshun::effect::hide(), winshun::Json::Object {
+                {"type", "open"}, {"path", launch.program}, {"args", launch.arguments},
+            }};
         }
         return {winshun::effect::notify(tr(zh, "已全屏伪装，键入 ", "Cover on; type ")
                                             + st.exitSequence + tr(zh, " 返回", " to return")),

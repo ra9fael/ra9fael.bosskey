@@ -83,7 +83,7 @@ def verify_package(folder):
             raise ValueError('Packaged manifest differs from source')
         required = [actual['runtime']['program']]
         if actual['runtime'].get('qt') == 'host':
-            required += {'ra9fael.qr': ['QrApp.dll'], 'ra9fael.bosskey': ['BossKeyApp.dll'],
+            required += {'ra9fael.qr': ['QrApp.dll'], 'ra9fael.bosskey': ['BossKeyApp.dll', 'bosskey-guard.exe'],
                          'ra9fael.binarylab': ['BinaryLabApp.dll']}.get(actual['id'], [])
         if actual.get('icon'):
             required.append(actual['icon'])

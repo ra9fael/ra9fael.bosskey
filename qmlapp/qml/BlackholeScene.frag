@@ -1,25 +1,30 @@
-// BlackholeScene.frag - a Schwarzschild black hole seen through a transparent cover.
+// BlackholeScene.frag - a Schwarzschild black hole over a dark sky.
 //
 // Ported from XboxNahida/ghostty-blackhole-main (MIT), whose shader follows Eric
 // Bruneton's "Real-time High-Quality Rendering of Non-Rotating Black Holes"
 // (BSD-3-Clause). The physics is unchanged: every pixel's null geodesic is
 // integrated with a = -(3/2) h^2 x / r^5, the disk is crossed with interpolation
 // and lit by a Shakura-Sunyaev profile with relativistic beaming. The shadow, the
-// photon ring, the disk's upper and lower arcs and the desktop bent into arcs
-// around the hole are all results of the integration, not things painted on.
+// photon ring, the disk's upper and lower arcs and the sky bent into arcs around
+// the hole are all results of the integration, not things painted on.
 //
-// Where the reference shader samples a terminal, this one samples a snapshot of
-// the desktop the cover sits on, so the boss sees the screen behind warp around
-// the hole and the shadow swallow it. The output is premultiplied: D3D11's
-// translucent swapchain composites the fragment colour straight onto the desktop,
-// so a transparent pixel has to carry no colour at all.
+// The backdrop is a dark sky of dust and stars, not the desktop the cover sits on.
+// Two reasons: a boss key that lenses the screen still shows the screen, and the
+// disk only pops against near-black. The sky is procedural because a flat colour
+// has nothing for the lens to bend — the filaments and stars wound into arcs
+// around the hole are most of what makes the lensing read. Nothing behind the
+// cover reaches the fragment stage at all, so showing this scene no longer has to
+// clear the desktop first.
+//
+// The output is opaque, and premultiplied all the same: D3D11's swapchain
+// composites the fragment colour straight onto whatever is under the window, and
+// one premultiply is what keeps that identical to an opaque result.
 //
 // Differences from the reference: no struct or uniform arrays (the look is a flat
-// set of uniforms so it runs as a QML ShaderEffect), no procedural starfield (the
-// desktop is the backdrop now), and no work-area shield (nothing here to protect).
-// The cover opens on the untouched desktop. The black hole starts as a small
-// central point, then the accretion disk spreads before the shadow grows into it.
-// Its centre follows a slow random walk supplied by QML.
+// set of uniforms so it runs as a QML ShaderEffect) and no work-area shield
+// (nothing here to protect). The black hole starts as a small central point, then
+// the accretion disk spreads before the shadow grows into it. Its centre follows
+// a slow random walk supplied by QML.
 //
 // Baked with qsb (see CMakeLists.txt): GLSL 100 es / 120 / 150 + HLSL 50 + MSL 12.
 
@@ -54,9 +59,12 @@ layout(std140, binding = 0) uniform buf {
     float uBeam;
     float uOpacity;
     float uDilation;
+    float uBgGain;   // gain on the sky's dust and stars (0: just uSky)
+    float uBloom;    // how much light the disk throws into the dust
+    float uVignette; // corner darkening, in [0,1]
+    vec4  uSky;      // the sky's darkest tone; vec4 because QML's `color` is
+                     // vec4 -- only .rgb is read
 };
-
-layout(binding = 1) uniform sampler2D uDesktop;
 
 #define B_CRIT 2.5980762   // 3*sqrt(3)/2: the shadow's angular radius, in r_s
 #define N_STEPS 48         // geodesic integration steps per pixel
@@ -88,9 +96,64 @@ vec2 rot(vec2 v, float a) {
     return vec2(c * v.x - s * v.y, s * v.x + c * v.y);
 }
 
-// A deflected sample can leave the snapshot: mirror-repeat instead of clamping,
-// so nothing smears along the edge.
-vec2 mirrorUV(vec2 u) { return 1.0 - abs(1.0 - mod(u, 2.0)); }
+// Value noise without the wrap, for the sky's dust.
+float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x),
+               mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+
+// Four octaves: the low ones are the filaments the lens winds into arcs, the high
+// ones only keep the dust from looking like a smooth gradient.
+float fbm(vec2 p) {
+    float sum = 0.0, amp = 0.5;
+    for (int i = 0; i < 4; i++) {
+        sum += amp * vnoise(p);
+        p *= 2.03;
+        amp *= 0.5;
+    }
+    return sum;
+}
+
+// One layer of stars: a cell either holds one or not, and the star is a gaussian
+// dot inside it. Dots rather than pixels, so the lens magnifies them into soft
+// blobs and arcs instead of aliasing a hard square.
+float starLayer(vec2 p, float keep, float size, float t) {
+    vec2 i = floor(p);
+    vec2 f = fract(p) - 0.5;
+    vec2 o = (vec2(hash21(i + vec2(7.31, 1.71)), hash21(i + vec2(2.93, 11.37))) - 0.5) * 0.72;
+    float d = length(f - o);
+    float spot = exp(-d * d / (size * size));
+    float seed = hash21(i + vec2(31.7, 5.13));
+    float shimmer = 0.88 + 0.12 * sin(t * mix(0.7, 1.9, seed) + TAU * seed);
+    return spot * step(hash21(i), keep) * mix(0.35, 1.0, seed) * shimmer;
+}
+
+// The sky: near-black, with bluish dust and three moving particle layers. Sampled at the
+// coordinates the deflection of the pixel worked out to, which is the whole point
+// — it is the structure in here that the hole bends, and without it the lens
+// would have nothing to show.
+vec3 backdrop(vec2 uv, float t) {
+    vec2 q = vec2(uv.x * uAspect, uv.y);            // square pixels
+    vec2 drift = vec2(0.0035, 0.0018) * t;
+    float dust = smoothstep(0.30, 0.95, fbm(q * 3.3 + vec2(11.7, 4.3) + drift));
+    // Independent velocities in sky coordinates: about 1.2, 3.7 and 8.6 px/s
+    // at 1080p. All layers are sampled after the same gravitational mapping.
+    float fine = starLayer((q + vec2(0.0010, -0.0005) * t) * 92.0, 0.055, 0.13, t);
+    float coarse = starLayer((q + vec2(0.0030, -0.0017) * t) * 33.0 + 17.0, 0.030, 0.10, t);
+    float motes = starLayer((q + vec2(0.0070, -0.0038) * t) * 24.0 + 43.0, 0.012, 0.075, t * 0.65);
+    vec3 col = uSky.rgb * (0.55 + 2.4 * dust * dust);
+    // Two dust tints at once, so the field is not monochrome: cool where it is
+    // thin, warm where it is dense.
+    col += mix(vec3(0.013, 0.017, 0.032), vec3(0.032, 0.021, 0.013), dust)
+         * (dust * dust * dust) * uBgGain;
+    // Far stars are cooler and fainter than the closer ones.
+    col += (vec3(0.70, 0.80, 1.00) * (fine * 0.50)
+            + vec3(1.00, 0.86, 0.70) * (coarse * 0.90)
+            + vec3(0.65, 0.75, 0.90) * (motes * 0.65)) * uBgGain;
+    return col;
+}
 
 // Blackbody colour from temperature in Kelvin (Tanner Helland fit, normalized).
 vec3 blackbody(float T) {
@@ -137,13 +200,12 @@ void main() {
     // band does not break apart when the inclination changes.
     float diskRin = mix(1.60, rin, smoothstep(0.035, 0.085, rh));
 
-    // The displacement fades out a few disk diameters away, and the alpha fades
-    // with it: where the lensing is imperceptible the pixel stops drawing
-    // altogether, so the raw desktop shows through with no seam either side.
+    // The displacement fades out a few disk diameters away, so the far field can
+    // skip the integration: where the lensing is imperceptible the pixel simply
+    // samples the sky where it is.
     float window = exp(-pow(plen / (7.0 * rh), 2.0));
 
-    vec3  col;   // what this pixel contributes (un-premultiplied)
-    float alpha;
+    vec3 col; // the sky, the disk's light, or the shadow -- composited right here
 
     if (b >= bmax) {
         // Far field: no integration. The deflection is the same finite-camera
@@ -157,14 +219,12 @@ void main() {
         // Mild chromatic aberration: blue bends a touch more than red, faded in
         // away from the handoff circle (the geodesic side has none).
         float ab = 0.035 * smoothstep(1.0, 2.0, b / bmax);
-        vec3  term;
         for (int i = 0; i < 3; i++) {
             float k  = 1.0 + (float(i) - 1.0) * ab;
             vec2  sp = p - dir * defl * k;
-            term[i]  = texture(uDesktop, mirrorUV(center + sp / vec2(uAspect, 1.0)))[i];
+            vec3  sky = backdrop(center + sp / vec2(uAspect, 1.0), t);
+            col[i] = sky[i];
         }
-        col   = term;
-        alpha = window;
     } else {
         // Near field: integrate x'' = -(3/2) h^2 x / r^5, the exact Schwarzschild
         // photon bending. h^2 = b^2 is conserved, so it is computed once.
@@ -252,40 +312,47 @@ void main() {
         if (!captured && dot(x, x) < 4.0)
             captured = true;
 
-        // Disk light is HDR: tonemap it over the desktop behind. Its own
-        // brightness is how much of the desktop it hides.
-        vec3  emit  = vec3(1.0) - exp(-emitc * uExposure);
-        float emitA = clamp(max(emit.r, max(emit.g, emit.b)), 0.0, 1.0);
+        // Disk light is HDR: tonemap it onto the sky behind it.
+        vec3 emit = vec3(1.0) - exp(-emitc * uExposure);
 
         if (captured) {
-            // The shadow swallows the desktop outright: nothing shows through.
-            col   = vec3(0.0);
-            alpha = 1.0;
+            // The shadow swallows the sky outright: nothing shows through. What
+            // draws its edge is the lensed sky around it, not a painted circle.
+            col = vec3(0.0);
         } else {
-            // Where did the escaped ray come from? Project it back onto the
-            // desktop plane behind the hole and map that to the snapshot. Only
-            // the displacement is faded by the window, never the colour, so the
-            // warp stays continuous into the far field.
+            // Where did the escaped ray come from? Project it back onto the sky
+            // plane behind the hole and read the sky there. Only the displacement
+            // is faded by the window, never the colour, so the warp stays
+            // continuous into the far field.
             vec3  d      = normalize(v);
             vec3  behind = vec3(0.0);
-            float toward = 0.0;
             if (d.z < -0.05) {
                 float tpl = (-LENS_DEPTH - x.z) / d.z;
                 vec3  hp  = x + d * tpl;
                 vec2  q   = rot(hp.xy, -uRoll) / W;
                 vec2  sp  = vec2(q.x, -q.y);
-                vec2  suv = mirrorUV(center + (p + (sp - p) * window) / vec2(uAspect, 1.0));
+                vec2  suv = center + (p + (sp - p) * window) / vec2(uAspect, 1.0);
                 // Rays bent past ~90 degrees never reach that plane; they fade
-                // out instead of sampling the wrong part of the desktop.
-                toward = smoothstep(0.05, 0.35, -d.z);
-                behind = texture(uDesktop, suv).rgb * toward;
+                // out instead of sampling the wrong part of the sky.
+                float toward = smoothstep(0.05, 0.35, -d.z);
+                behind = backdrop(suv, t) * toward;
             }
-            alpha = max(toward, emitA);
-            col   = (behind * trans + emit) / max(alpha, 1e-4);
+            col = behind * trans + emit;
         }
     }
 
-    // Premultiplied, or D3D11's translucent swapchain tints the whole window
-    // with the colour of every transparent pixel.
-    fragColor = vec4(col * alpha * qt_Opacity, alpha * qt_Opacity);
+    // A soft outer disk glow, limited to far-field pixels. The captured shadow
+    // remains pure black.
+    float dh   = (b - 0.70 * rout) / (0.45 * rout);
+    float halo = exp(-dh * dh) * smoothstep(B_CRIT, B_CRIT * 1.35, b);
+    if (b >= bmax)
+        col += blackbody(uTemp * 0.85) * (halo * uBloom * 0.035);
+
+    // Corner darkening: keeps the eye on the hole, and stops the sky from ending
+    // squarely at the edges of the screen.
+    float vr = length((uv - 0.5) * vec2(uAspect, 1.0)) / (0.5 * length(vec2(uAspect, 1.0)));
+    col *= 1.0 - uVignette * smoothstep(0.10, 1.0, vr);
+
+    // Opaque output covers the window underneath with the rendered sky.
+    fragColor = vec4(col * qt_Opacity, qt_Opacity);
 }

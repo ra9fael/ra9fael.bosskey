@@ -1,2 +1,5 @@
 # Validation evidence is compared byte for byte; never let git touch a PNG.
 *.png binary
+docs/validation/cover-input-sky/*.png filter=lfs diff=lfs merge=lfs -text
+docs/validation/cover-input-sky/windowed-20261121/*.png filter=lfs diff=lfs merge=lfs -text
+docs/validation/cover-input-sky/uac/*.png filter=lfs diff=lfs merge=lfs -text

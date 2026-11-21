@@ -17,6 +17,7 @@ import sys
 import time
 import zlib
 from ctypes import wintypes
+import desktop
 
 u = ctypes.windll.user32
 g = ctypes.windll.gdi32
@@ -81,10 +82,18 @@ def find_visible_cover():
     return None
 
 
-def capture(hwnd, path):
+def capture(hwnd, path, box=None):
+    desktop.require_input_desktop()
+    desktop.require_windowed(hwnd)
     wr = wintypes.RECT()
     u.GetWindowRect(hwnd, ctypes.byref(wr))
     w, h = wr.right - wr.left, wr.bottom - wr.top
+    if box is not None:
+        left, top, right, bottom = box
+        assert 0 <= left < right <= w and 0 <= top < bottom <= h, "crop outside cover"
+        wr.left += left
+        wr.top += top
+        w, h = right - left, bottom - top
     if w <= 0 or h <= 0:
         print("empty window rect", file=sys.stderr)
         return False
@@ -93,7 +102,8 @@ def capture(hwnd, path):
     memdc = g.CreateCompatibleDC(screen)
     bmp = g.CreateCompatibleBitmap(screen, w, h)
     old = g.SelectObject(memdc, bmp)
-    g.BitBlt(memdc, 0, 0, w, h, screen, wr.left, wr.top, 0x00CC0020)  # SRCCOPY
+    captured_at = time.monotonic()
+    assert g.BitBlt(memdc, 0, 0, w, h, screen, wr.left, wr.top, 0x00CC0020), "BitBlt failed"
 
     bi = BITMAPINFO()
     bi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -108,6 +118,7 @@ def capture(hwnd, path):
     px = bytearray(bytes(buf))
     for i in range(0, len(px), 4):  # BGRA -> RGBA
         px[i], px[i + 2] = px[i + 2], px[i]
+        px[i + 3] = 255
     row = w * 4
     raw = b"".join(b"\x00" + bytes(px[y * row:(y + 1) * row]) for y in range(h))
     png = (b"\x89PNG\r\n\x1a\n"
@@ -122,7 +133,7 @@ def capture(hwnd, path):
     g.DeleteDC(memdc)
     u.ReleaseDC(None, screen)
     print(f"captured {w}x{h} -> {path}")
-    return True
+    return captured_at
 
 
 def main(argv):

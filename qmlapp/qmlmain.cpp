@@ -10,6 +10,8 @@
 // [--windowed] [--screen <index>] [--autohide <sec>] [--en]
 // [--app-dir <folder>]` opens the cover directly, no WinShun and no protocol.
 // --windowed shows a small window; --screen selects its screen index (0-based).
+// --enhanced emits a guard-launch JSON diagnostic for the external controller;
+// --qml-only isolates the focused QML exit path without a native hook.
 // --autohide closes it
 // after the seconds (the verify scripts' chance to screenshot and leave).
 //
@@ -28,6 +30,11 @@
 #include <QQuickWindow>
 
 #include <QDir>
+#include <QElapsedTimer>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include <windows.h>
 
@@ -36,6 +43,8 @@
 #include <cstdio>
 #include <algorithm>
 #include <thread>
+#include <mutex>
+#include <vector>
 
 using namespace Qt::StringLiterals;
 
@@ -149,8 +158,13 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     spec.autoHideSec = 0;
     spec.zh = !args.contains(u"--en"_s);
     QString scene;
+    QString metricsPath;
     for (int i = 0; i < args.size(); ++i) {
         const QString& arg = args.at(i);
+        if (arg == u"--metrics" && i + 1 < args.size()) {
+            metricsPath = args.at(++i);
+            continue;
+        }
         if (arg == u"--en" || arg == u"--all" || arg == u"--windowed" || arg == u"--app-dir")
             continue;
         if (arg == u"--screen" && i + 1 < args.size()) {
@@ -169,16 +183,69 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
     spec.scene = scene.toStdString();
     spec.allScreens = args.contains(u"--all"_s);
     spec.windowed = args.contains(u"--windowed"_s);
+    spec.enhanced = args.contains(u"--enhanced"_s);
+    spec.nativeInput = !args.contains(u"--qml-only"_s);
+    if (spec.enhanced && !spec.nativeInput) {
+        std::fprintf(stderr, "bosskey: --enhanced and --qml-only are separate acceptance modes\n");
+        return 2;
+    }
     if (!bosskey::isKnownScene(spec.scene)) {
         std::fprintf(stderr, "bosskey: --cover needs bsod | update | gcc | matrix | blackhole\n");
         std::fflush(stderr);
         return 2;
     }
     std::string error;
-    if (!bosskey::showCover(spec, error)) {
+    QElapsedTimer frameClock;
+    std::mutex frameMutex;
+    std::vector<double> frameIntervals;
+    qint64 previousFrame = 0;
+    if (!metricsPath.isEmpty()) {
+        if (!spec.windowed || spec.autoHideSec <= 12 || spec.autoHideSec > 120) {
+            std::fprintf(stderr, "bosskey: --metrics requires --windowed and --autohide 13..120\n");
+            return 2;
+        }
+        frameClock.start();
+        for (QWindow* window : QGuiApplication::allWindows()) {
+            if (auto* quick = qobject_cast<QQuickWindow*>(window)) {
+                QObject::connect(quick, &QQuickWindow::frameSwapped, &app, [&] {
+                    const qint64 now = frameClock.nsecsElapsed();
+                    const std::lock_guard<std::mutex> lock(frameMutex);
+                    if (now >= 12'000'000'000LL && previousFrame >= 12'000'000'000LL)
+                        frameIntervals.push_back((now - previousFrame) / 1e6);
+                    previousFrame = now;
+                }, Qt::DirectConnection);
+            }
+        }
+    }
+    bosskey::GuardLaunch launch;
+    if (!bosskey::showCover(spec, error, &launch)) {
         std::fprintf(stderr, "bosskey: %s\n", error.c_str());
         std::fflush(stderr);
         return 2;
     }
-    return app.exec();
+    if (!launch.program.empty()) {
+        std::fprintf(stderr, "bosskey: guard-launch=%s\n", winshun::Json(winshun::Json::Object {
+            {"path", launch.program}, {"args", launch.arguments},
+        }).dump().c_str());
+        std::fflush(stderr);
+    }
+    const int result = app.exec();
+    if (!metricsPath.isEmpty()) {
+        QJsonArray intervals;
+        {
+            const std::lock_guard<std::mutex> lock(frameMutex);
+            for (const double interval : frameIntervals)
+                intervals.append(interval);
+        }
+        QFile file(metricsPath);
+        if (!file.open(QIODevice::WriteOnly)) {
+            std::fprintf(stderr, "bosskey: cannot write preview metrics\n");
+            return 3;
+        }
+        file.write(QJsonDocument(QJsonObject {
+            {u"warmup_seconds"_s, 12},
+            {u"frame_swapped_intervals_ms"_s, intervals},
+        }).toJson());
+    }
+    return result;
 }

@@ -2,13 +2,13 @@
 """Package this plugin as dist/<id>-<version>.wsplugin.
 
 Usage:
-  python tools/package.py              # package the committed files + the built exe
+  python tools/package.py              # package working-tree files + the built exe
   python tools/package.py --tag v1.2.3 # also require the tag to match plugin.json
 
-What goes in: every file tracked by git (``git ls-files``), except paths that
+What goes in: tracked and non-ignored untracked working-tree files, except paths that
 start with a dot (.github, .gitignore, ...), plus ``runtime.program`` from
-plugin.json (the built exe, which is not committed) and BossKeyApp.dll when it
-is built beside it (the cover's starter loads it from its own folder;
+plugin.json (the built exe, which is not committed), BossKeyApp.dll and the
+required bosskey-guard.exe helper (the cover's starter loads its DLL locally;
 qmlapp/stub/main.cpp). The zip is deterministic (sorted names, fixed
 timestamps, stored, not compressed), so the same inputs always give the same
 sha256. plugin.json sits at the archive root, which is what WinShun's "install
@@ -43,13 +43,17 @@ def fail(msg: str) -> int:
 
 
 def tracked_files() -> list[str]:
-    out = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, check=True,
+    out = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"], cwd=ROOT, check=True,
                          capture_output=True).stdout.decode("utf-8")
     names = [n for n in out.split("\0") if n]
-    # tools/verify/ holds Windows-only dev harnesses; they are not part of
-    # the shipped plugin.
+    deleted = subprocess.run(["git", "ls-files", "--deleted", "-z"], cwd=ROOT, check=True,
+                             capture_output=True).stdout.decode("utf-8").split("\0")
+    deleted_set = {n for n in deleted if n}
+    # tools/verify/ holds Windows-only dev harnesses; deleted tracked files are
+    # omitted so packaging reflects the working tree without requiring staging.
     return [n for n in names
-            if not any(part.startswith(".") for part in n.split("/"))
+            if n not in deleted_set
+            and not any(part.startswith(".") for part in n.split("/"))
             and not n.startswith("tools/verify/")]
 
 
@@ -75,8 +79,11 @@ def main() -> int:
     if not (ROOT / program).is_file():
         return fail(f"{program} not found; build first (cmake -B build && cmake --build build)")
 
-    files = sorted({*tracked_files(), program}
-                   | ({"BossKeyApp.dll"} if (ROOT / "BossKeyApp.dll").is_file() else set()))
+    runtime_files = {program, "BossKeyApp.dll", "bosskey-guard.exe"}
+    for name in runtime_files:
+        if not (ROOT / name).is_file():
+            return fail(f"{name} not found; build all runtime targets first")
+    files = sorted({*tracked_files(), *runtime_files})
     if "plugin.json" not in files:
         return fail("plugin.json is not committed")
     missing = [f for f in files if not (ROOT / f).is_file()]

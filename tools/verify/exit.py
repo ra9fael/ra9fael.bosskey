@@ -48,9 +48,9 @@ def send_text(text):
         down.ki = KEYBDINPUT(vk, 0, 0, 0, None)
         up = INPUT(type=1)
         up.ki = KEYBDINPUT(vk, 0, 2, 0, None)  # KEYEVENTF_KEYUP
-        u.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
+        assert u.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT)) == 1, "SendInput keydown failed"
         time.sleep(0.02)
-        u.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
+        assert u.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT)) == 1, "SendInput keyup failed"
         time.sleep(0.02)
 
 

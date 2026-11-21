@@ -4,6 +4,7 @@
 #include "BossQml.h"
 #include "../logic.h"
 #include "../qrcode.h"
+#include "../winshun.h"
 
 #include <QDateTime>
 
@@ -79,12 +80,6 @@ void CoverController::stopCover()
     }
 }
 
-void CoverController::bumpDesktopEpoch()
-{
-    ++m_desktopEpoch;
-    emit desktopEpochChanged();
-}
-
 bool CoverController::keyPressed(const QString& text, int key)
 {
     (void)key; // the sequence is letters and digits only; their e.text carries them
@@ -101,6 +96,7 @@ bool CoverController::keyPressed(const QString& text, int key)
         m_buffer = std::move(next);
         if (hit) {
             m_buffer.clear();
+            winshun::debug("bosskey: exit source=qml");
             emit exitRequested();
             return true;
         }
