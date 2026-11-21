@@ -61,8 +61,11 @@ jobs:
         with:
           version: ${{ needs.verify.outputs.qt }}
           arch: win64_msvc2022_64
+          # qt_add_shaders bakes the black hole fragment shader with qsb, which
+          # ships with the separate Shader Tools module.
+          modules: qtshadertools
           cache: true
-          cache-key-prefix: plugin-qt-aqt-5a49f2b
+          cache-key-prefix: plugin-qt-aqt-5a49f2b-shadertools
           setup-python: false
           aqtsource: git+https://github.com/miurahr/aqtinstall.git@5a49f2b391ae8ee1d3c0dd87f8b33c1d49a4deb7
       - name: Checkout pinned WinShun source
