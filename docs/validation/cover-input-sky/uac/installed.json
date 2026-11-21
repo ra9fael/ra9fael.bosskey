@@ -1,17 +1,15 @@
 {
   "version": "0.1.3",
-  "permissions": [
-    "ui",
-    "processes"
-  ],
-  "binary_bytes_match": {
+  "source": "GitHub release v0.1.3 asset",
+  "release_sha256": "baf9ff377d74d404cf3181e72422d7b153eecb8a531db4115a390ae74c8a335d",
+  "installed_matches_release": {
     "bosskey.exe": true,
     "BossKeyApp.dll": true,
     "bosskey-guard.exe": true
   },
   "plugin_processes": [
     {
-      "pid": 25644,
+      "pid": 55232,
       "integrity": 4096,
       "restricted": true,
       "ui_access": false
