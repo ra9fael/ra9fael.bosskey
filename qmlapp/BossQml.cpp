@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <vector>
+#include <cwchar>
 
 using namespace Qt::StringLiterals;
 
@@ -33,6 +34,12 @@ QQmlEngine* g_engine = nullptr;
 CoverController* g_controller = nullptr;
 DesktopProvider* g_desktop = nullptr;
 std::vector<QQuickWindow*> g_windows; // one per screen, kept for reuse
+struct MinimizedWindow {
+    HWND hwnd;
+    WINDOWPLACEMENT placement;
+};
+std::vector<MinimizedWindow> g_minimized; // windows the show-desktop step put down
+bool g_desktopCleared = false;            // the desktop is clear and must be put back
 
 QString appDir()
 {
@@ -92,6 +99,125 @@ void grabDesktop(QScreen* screen, const QRect& shown)
     g_controller->bumpDesktopEpoch();
 }
 
+// Show desktop exactly as the keyboard shortcut does: Win+D. The shell does the
+// minimizing (so elevated windows go down as well), and it remembers how to put
+// everything back, so sending it again restores what was up.
+void sendWinD()
+{
+    // Injected hotkeys need air between the events: a shell hotkey that arrives
+    // in the same instant as its modifier is regularly missed.
+    const auto tap = [](WORD key, DWORD flags) {
+        INPUT input = {};
+        input.type = INPUT_KEYBOARD;
+        input.ki.wVk = key;
+        input.ki.dwFlags = flags;
+        ::SendInput(1, &input, sizeof(INPUT));
+        QThread::msleep(25);
+    };
+    tap(VK_LWIN, 0);
+    tap('D', 0);
+    tap('D', KEYEVENTF_KEYUP);
+    tap(VK_LWIN, KEYEVENTF_KEYUP);
+}
+
+// One top-level window the boss could be reading, put down and remembered.
+BOOL CALLBACK minimizeTopLevel(HWND hwnd, LPARAM)
+{
+    if (!::IsWindowVisible(hwnd) || ::IsIconic(hwnd) || ::GetWindow(hwnd, GW_OWNER))
+        return TRUE;
+    DWORD pid = 0;
+    ::GetWindowThreadProcessId(hwnd, &pid);
+    if (pid == ::GetCurrentProcessId())
+        return TRUE; // the cover windows and this plugin
+    if (::GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)
+        return TRUE;
+    wchar_t cls[32] = {};
+    ::GetClassNameW(hwnd, cls, 32);
+    if (std::wcscmp(cls, L"Progman") == 0 || std::wcscmp(cls, L"WorkerW") == 0
+        || std::wcscmp(cls, L"Shell_TrayWnd") == 0
+        || std::wcscmp(cls, L"Shell_SecondaryTrayWnd") == 0)
+        return TRUE; // the wallpaper, icons and taskbar stay
+    WINDOWPLACEMENT placement{};
+    placement.length = sizeof(placement);
+    if (!::GetWindowPlacement(hwnd, &placement))
+        return TRUE;
+    if (!::ShowWindow(hwnd, SW_MINIMIZE))
+        return TRUE;
+    g_minimized.push_back({hwnd, placement});    return TRUE;
+}
+
+// Anything the boss could be reading? Only then is Win+D a clear rather than a
+// restore of what somebody already minimized.
+int windowsUp()
+{
+    struct State {
+        int count;
+    } state{0};
+    ::EnumWindows([](HWND hwnd, LPARAM data) -> BOOL {
+        auto* state = reinterpret_cast<State*>(data);
+        if (!::IsWindowVisible(hwnd) || ::IsIconic(hwnd))
+            return TRUE;
+        if (::GetWindow(hwnd, GW_OWNER))
+            return TRUE;
+        DWORD pid = 0;
+        ::GetWindowThreadProcessId(hwnd, &pid);
+        if (pid == ::GetCurrentProcessId())
+            return TRUE;
+        if (::GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)
+            return TRUE;
+        wchar_t cls[32] = {};
+        ::GetClassNameW(hwnd, cls, 32);
+        const bool shell = std::wcscmp(cls, L"Progman") == 0 || std::wcscmp(cls, L"WorkerW") == 0
+            || std::wcscmp(cls, L"Shell_TrayWnd") == 0
+            || std::wcscmp(cls, L"Shell_SecondaryTrayWnd") == 0;
+        if (!shell)
+            ++state->count;
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&state));
+    return state.count;
+}
+
+// The black hole cover sits on the wallpaper: the windows go down before the
+// snapshot, so what the lens bends is the desktop and not the boss's editor.
+// ShowWindow does the work per window (that is all Win+D does underneath), and
+// injected keys back it up for windows UIPI will not let us touch.
+void showDesktop()
+{
+    if (g_desktopCleared)
+        return;
+    const int before = windowsUp();
+    if (before == 0)
+        return; // already the desktop: nothing to put down
+    ::EnumWindows(minimizeTopLevel, 0);
+    for (int i = 0; i < 25 && windowsUp() > 0; ++i)
+        QThread::msleep(20);
+    const int minimized = static_cast<int>(g_minimized.size());
+    if (windowsUp() > 0)
+        sendWinD();
+    for (int i = 0; i < 25 && windowsUp() > 0; ++i)
+        QThread::msleep(20);
+    QThread::msleep(150); // the DWM trails the window state by a frame or two
+    g_desktopCleared = true;
+    // Windows of a higher integrity level refuse both calls (UIPI), so the ones
+    // still up after both are the ones this process may not touch.
+    winshun::debug("ra9fael.bosskey: show desktop: " + std::to_string(before)
+                   + " windows up, " + std::to_string(minimized) + " minimized, "
+                   + std::to_string(windowsUp()) + " left");
+}
+
+// Back where they were: the placements saved above, last-shown last so the
+// window the boss was reading ends up in front again.
+void restoreDesktop()
+{
+    if (!g_desktopCleared)
+        return;
+    for (auto it = g_minimized.rbegin(); it != g_minimized.rend(); ++it)
+        if (::IsWindow(it->hwnd) && ::IsIconic(it->hwnd))
+            ::SetWindowPlacement(it->hwnd, &it->placement);
+    g_minimized.clear();
+    g_desktopCleared = false;
+}
+
 bool guiShow(const CoverSpec& spec, std::string& error)
 {
     ensureEngine();
@@ -115,6 +241,10 @@ bool guiShow(const CoverSpec& spec, std::string& error)
     }
 
     QList<QScreen*> covered;
+    // The black hole is a lens over the wallpaper: clear the screen before the
+    // snapshot, so what it bends is the desktop and not the windows on it.
+    if (spec.scene == QLatin1String(kSceneBlackhole))
+        showDesktop();
     for (QScreen* screen : targets) {
         QQuickWindow* window = coverWindow(screen);
         if (!window)
@@ -155,6 +285,7 @@ void guiHide()
         window->hide();
     if (g_controller)
         g_controller->stopCover();
+    restoreDesktop();
 }
 
 } // namespace
@@ -212,3 +343,4 @@ CoverController* coverController()
 }
 
 } // namespace bosskey
+

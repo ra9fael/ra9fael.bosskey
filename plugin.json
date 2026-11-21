@@ -26,8 +26,8 @@
       "key": "sceneMap",
       "type": "text",
       "title": {"zh": "子触发词映射", "en": "Sub-trigger map"},
-      "hint": {"zh": "逗号分隔的 触发词=场景，场景为 bsod/update/gcc/matrix/blackhole；默认用场景全称，也可以改成任意一个词（如 黑洞=blackhole）", "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc/matrix/blackhole. Defaults are the full scene names; any single word works (e.g. 黑洞=blackhole)"},
-      "default": "bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole"
+      "hint": {"zh": "逗号分隔的 触发词=场景，场景为 bsod/update/gcc/matrix/blackhole；一个场景可以绑多个词（英文名、全拼、缩写都行，如 heidong=blackhole,hd=blackhole）", "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc/matrix/blackhole. A scene can answer to several words (its name, full pinyin, initials — e.g. heidong=blackhole,hd=blackhole)"},
+      "default": "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole"
     },
     {
       "key": "exitSequence",
@@ -65,7 +65,7 @@
       "keyword": ["boss", "摸鱼"],
       "title": {"zh": "老板键伪装", "en": "Boss cover"},
       "icon": "glyph:U+ED1A",
-      "hint": {"zh": "bsod 蓝屏 · update 更新 · gcc 编译 · matrix 代码雨 · blackhole 黑洞；Enter 全屏伪装，键入退出序列返回", "en": "bsod bluescreen · update Windows Update · gcc build · matrix Matrix rain · blackhole black hole; Enter covers the screen, type the exit sequence to return"},
+      "hint": {"zh": "bsod/lanping/lp 蓝屏 · update/gengxin/gx 更新 · gcc/bianyi/by 编译 · matrix/daimayu/dmy 代码雨 · blackhole/heidong/hd 黑洞；Enter 全屏伪装，键入退出序列返回", "en": "bsod/lanping/lp bluescreen · update/gengxin/gx Windows Update · gcc/bianyi/by build · matrix/daimayu/dmy Matrix rain · blackhole/heidong/hd black hole; Enter covers the screen, type the exit sequence to return"},
       "actions": [
         {"id": "cover", "title": {"zh": "全屏伪装", "en": "Cover the screen"}, "key": "Enter"}
       ]

@@ -64,18 +64,25 @@ void testSceneMap()
     expect(bosskey::parseSceneMap("").empty(), "map: empty text");
     expect(bosskey::parseSceneMap("nothing here").empty(), "map: no pairs");
 
-    // The default map binds the five scenes by their full names.
+    // The default map binds three words per scene: its name, the full pinyin and
+    // the pinyin initials.
     const auto def = bosskey::defaultSceneMap();
-    expect(def.size() == 5, "default map: five tokens");
+    expect(def.size() == 15, "default map: three words per scene");
     expectEq(bosskey::resolveScene(def, "bsod"), bosskey::kSceneBsod, "resolve: bsod");
+    expectEq(bosskey::resolveScene(def, "lanping"), bosskey::kSceneBsod, "resolve: full pinyin");
+    expectEq(bosskey::resolveScene(def, "lp"), bosskey::kSceneBsod, "resolve: pinyin initials");
     expectEq(bosskey::resolveScene(def, "UPDATE"), bosskey::kSceneUpdate,
-             "resolve: case-folded full name");
-    expectEq(bosskey::resolveScene(def, "matrix"), bosskey::kSceneMatrix, "resolve: matrix");
+             "resolve: case-folded name");
+    expectEq(bosskey::resolveScene(def, "gengxin"), bosskey::kSceneUpdate, "resolve: gx pinyin");
+    expectEq(bosskey::resolveScene(def, "daimayu"), bosskey::kSceneMatrix, "resolve: dmy pinyin");
     expectEq(bosskey::resolveScene(def, "blackhole"), bosskey::kSceneBlackhole,
              "resolve: blackhole");
+    expectEq(bosskey::resolveScene(def, "heidong"), bosskey::kSceneBlackhole,
+             "resolve: heidong");
+    expectEq(bosskey::resolveScene(def, "hd"), bosskey::kSceneBlackhole, "resolve: hd");
     expect(bosskey::isKnownScene(bosskey::kSceneMatrix), "scene: matrix is known");
     expect(bosskey::isKnownScene(bosskey::kSceneBlackhole), "scene: blackhole is known");
-    expectEq(bosskey::resolveScene(def, "h"), "", "resolve: no single letters by default");
+    expectEq(bosskey::resolveScene(def, "h"), "", "resolve: a lone h is not bound");
     const auto allScenes = bosskey::parseSceneMap(
         "bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole");
     expect(allScenes.size() == 5, "map: all five full names parse");
@@ -84,6 +91,19 @@ void testSceneMap()
     expectEq(bosskey::resolveScene(def, "bsod bsod"), "", "resolve: two words refused");
     expectEq(bosskey::resolveScene(bosskey::parseSceneMap(""), "b"), "",
              "resolve: empty map binds nothing");
+
+    // The listing collapses the aliases: one row per scene, and the row names
+    // every word that reaches it.
+    const auto canonical = bosskey::canonicalBindings(def);
+    expect(canonical.size() == 5, "canonical: one binding per scene");
+    expectEq(canonical[0].token, "bsod", "canonical: the first binding wins");
+    expectEq(canonical[4].scene, bosskey::kSceneBlackhole, "canonical: blackhole last");
+    const auto holes = bosskey::tokensForScene(def, bosskey::kSceneBlackhole);
+    expect(holes.size() == 3, "tokens: three words for blackhole");
+    expectEq(holes[0], "blackhole", "tokens: the name comes first");
+    expectEq(holes[1], "heidong", "tokens: then the full pinyin");
+    expectEq(holes[2], "hd", "tokens: then the initials");
+    expect(bosskey::tokensForScene(def, "update").size() == 3, "tokens: update has three");
 }
 
 // ---- the exit sequence -------------------------------------------------------

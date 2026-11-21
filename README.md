@@ -10,20 +10,22 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 | 输入 | 效果 |
 |---|---|
-| `boss ` | 列出五个场景行，每行都写着该打什么 |
-| `boss bsod` | 全屏蓝屏（Win10 风格，百分比缓慢收集错误信息） |
-| `boss update` | 全屏 Windows 更新（spinner 卡在 87%） |
-| `boss gcc` | 全屏 gcc 编译（`-Wall -O2`，真实格式的警告，长行换行，永远编译不到 100%） |
-| `boss matrix` | 全屏黑客帝国代码雨（片假名、数字与拉丁字母，绿色渐隐轨迹） |
-| `boss blackhole` | 全屏黑洞（透明透镜：桌面透出并被引力透镜扭曲；开场先亮出桌面，黑洞由小长大、吸积盘越来越亮） |
+| `boss ` | 列出五个场景行，每行都写着能触发它的词 |
+| `boss bsod` / `lanping` / `lp` | 全屏蓝屏（Win10 风格，百分比缓慢收集错误信息） |
+| `boss update` / `gengxin` / `gx` | 全屏 Windows 更新（spinner 卡在 87%） |
+| `boss gcc` / `bianyi` / `by` | 全屏 gcc 编译（`-Wall -O2`，真实格式的警告，长行换行，永远编译不到 100%） |
+| `boss matrix` / `daimayu` / `dmy` | 全屏黑客帝国代码雨（片假名、数字与拉丁字母，绿色渐隐轨迹） |
+| `boss blackhole` / `heidong` / `hd` | 全屏黑洞（透明透镜：桌面透出并被引力透镜扭曲；开场先清屏，吸积盘先铺开、黑洞随后长大，之后随机游走） |
 
-回车触发全屏伪装；伪装期间所有按键都被吞掉、不产生任何显示，键入退出按键序列即返回。子触发词就是场景全称（`bsod` / `update` / `gcc` / `matrix` / `blackhole`），搜索结果里每一行都带着自己的触发词；想换别的词（单字母、中文词都行）在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。`boss blackhole` 不隐藏桌面：封面窗口是透明的，桌面从洞里绕出来、被弯成弧线显示。
+回车触发全屏伪装；伪装期间所有按键都被吞掉、不产生任何显示，键入退出按键序列即返回。每个场景认三个词：英文全称、中文全拼、拼音首字母（`boss hd` 等于 `boss heidong` 等于 `boss blackhole`），搜索结果里每一行都列着这三个词；想换别的词在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。
+
+`boss blackhole` 不隐藏桌面：封面窗口是透明的，桌面从洞里绕出来、被弯成弧线显示。开场会先按 Win+D 的语义把窗口收起来、退出时还原，所以镜头里是壁纸和桌面图标，而不是你正在读的窗口。
 
 ## 设置
 
 | 设置 | 默认 | 说明 |
 |---|---|---|
-| 子触发词映射 | `bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole` | 自定义触发词，如 `黑洞=blackhole` 或 `b=bsod,h=blackhole`；场景为 bsod / update / gcc / matrix / blackhole |
+| 子触发词映射 | `bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole` | 一个场景可以绑多个词（英文名、全拼、缩写）；场景为 bsod / update / gcc / matrix / blackhole |
 | 退出按键序列 | `deadbeef` | 伪装界面下直接键入即退出，不区分大小写；只接受字母和数字 |
 | 自动消失秒数 | `0` | 0 = 一直伪装到手动退出 |
 | gcc 场景项目名 | `winshun-core` | 编译输出显示的目标名 |

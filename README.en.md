@@ -10,20 +10,22 @@ The result list stays presentable; the fullscreen part does not.
 
 | Input | Effect |
 |---|---|
-| `boss ` | lists the five scene rows, each showing what to type |
-| `boss bsod` | fullscreen bluescreen (Win10 style, percent slowly collecting error info) |
-| `boss update` | fullscreen Windows Update (spinner stalled at 87%) |
-| `boss gcc` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
-| `boss matrix` | fullscreen Matrix-style digital rain (katakana, digits and Latin letters with fading trails) |
-| `boss blackhole` | fullscreen black hole (a transparent lens: the desktop shows through, bent into arcs; it opens on the plain desktop, then the hole grows in from a point while the disk brightens) |
+| `boss ` | lists the five scene rows, each showing the words that trigger it |
+| `boss bsod` / `lanping` / `lp` | fullscreen bluescreen (Win10 style, percent slowly collecting error info) |
+| `boss update` / `gengxin` / `gx` | fullscreen Windows Update (spinner stalled at 87%) |
+| `boss gcc` / `bianyi` / `by` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
+| `boss matrix` / `daimayu` / `dmy` | fullscreen Matrix-style digital rain (katakana, digits and Latin letters with fading trails) |
+| `boss blackhole` / `heidong` / `hd` | fullscreen black hole (a transparent lens: the desktop shows through, bent into arcs; it clears the screen first, the disk spreads before the hole grows, then the hole wanders) |
 
-Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. The sub-trigger is the scene's full name (`bsod` / `update` / `gcc` / `matrix` / `blackhole`), and every search result row carries its own trigger; any other word (a single letter, a Chinese word) can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`. `boss blackhole` does not hide the desktop: the cover window is transparent, and the desktop shows through, bent into arcs around the hole.
+Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. Each scene answers to three words: its English name, the full Mandarin pinyin and the pinyin initials (`boss hd` = `boss heidong` = `boss blackhole`), and every search result row lists them; any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
+
+`boss blackhole` does not hide the desktop: the cover window is transparent, and the desktop shows through, bent into arcs around the hole. It first clears the screen the way Win+D does and puts the windows back on exit, so the lens bends the wallpaper and the desktop icons rather than whatever you were reading.
 
 ## Settings
 
 | Setting | Default | Meaning |
 |---|---|---|
-| Sub-trigger map | `bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole` | custom triggers, e.g. `黑洞=blackhole` or `b=bsod,h=blackhole`; scenes are bsod / update / gcc / matrix / blackhole |
+| Sub-trigger map | `bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole` | one scene can answer to several words (name, full pinyin, initials); scenes are bsod / update / gcc / matrix / blackhole |
 | Exit key sequence | `deadbeef` | type it on the cover to exit, case-insensitive; letters and digits only |
 | Auto-dismiss seconds | `0` | 0 = keep the cover until dismissed manually |
 | gcc scene project name | `winshun-core` | the target name shown in the build output |

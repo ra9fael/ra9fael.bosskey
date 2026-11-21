@@ -96,16 +96,44 @@ inline std::vector<SceneBinding> parseSceneMap(const std::string& text)
     return out;
 }
 
-// The default map binds each scene's own full name — "boss blackhole", not
-// "boss h" — so nothing has to be decoded from a letter. Anything else (a
-// single letter, a Chinese word) can be bound in settings instead.
+// The default map binds each scene's own name plus the Mandarin full pinyin and
+// the pinyin initials, so `boss blackhole`, `boss heidong` and `boss hd` all
+// reach the same scene: nothing has to be decoded from a letter, and nothing has
+// to be spelled out either. Anything else can still be bound in settings.
 inline std::vector<SceneBinding> defaultSceneMap()
 {
-    return {{kSceneBsod, kSceneBsod},
-            {kSceneUpdate, kSceneUpdate},
-            {kSceneGcc, kSceneGcc},
-            {kSceneMatrix, kSceneMatrix},
-            {kSceneBlackhole, kSceneBlackhole}};
+    return {{kSceneBsod, kSceneBsod}, {"lanping", kSceneBsod}, {"lp", kSceneBsod},
+            {kSceneUpdate, kSceneUpdate}, {"gengxin", kSceneUpdate}, {"gx", kSceneUpdate},
+            {kSceneGcc, kSceneGcc}, {"bianyi", kSceneGcc}, {"by", kSceneGcc},
+            {kSceneMatrix, kSceneMatrix}, {"daimayu", kSceneMatrix}, {"dmy", kSceneMatrix},
+            {kSceneBlackhole, kSceneBlackhole}, {"heidong", kSceneBlackhole},
+            {"hd", kSceneBlackhole}};
+}
+
+// Every token bound to a scene, in map order; the first one is canonical.
+inline std::vector<std::string> tokensForScene(const std::vector<SceneBinding>& map,
+                                               const std::string& scene)
+{
+    std::vector<std::string> out;
+    for (const SceneBinding& b : map)
+        if (b.scene == scene)
+            out.push_back(b.token);
+    return out;
+}
+
+// The map with one entry per scene (its first binding), which is what the
+// search listing shows: `boss ` lists five rows, not one per alias.
+inline std::vector<SceneBinding> canonicalBindings(const std::vector<SceneBinding>& map)
+{
+    std::vector<SceneBinding> out;
+    for (const SceneBinding& b : map) {
+        bool seen = false;
+        for (const SceneBinding& c : out)
+            seen = seen || c.scene == b.scene;
+        if (!seen)
+            out.push_back(b);
+    }
+    return out;
 }
 
 // The scene for a query's first word; "" when the word is not bound.

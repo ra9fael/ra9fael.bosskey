@@ -32,7 +32,10 @@ Settings readSettings(const winshun::Json& s)
         return fallback;
     };
     st.map = bosskey::parseSceneMap(text(
-        "sceneMap", "bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole"));
+        "sceneMap",
+        "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,"
+        "gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,"
+        "blackhole=blackhole,heidong=blackhole,hd=blackhole"));
     st.exitSequence = bosskey::normalizeSequence(text("exitSequence", "deadbeef"));
     if (st.exitSequence.empty())
         st.exitSequence = "deadbeef";
@@ -70,22 +73,24 @@ std::string sceneTitle(bool zh, const std::string& scene)
 }
 
 winshun::Item makeSceneRow(bool zh,
-                           const std::string& token,
+                           const std::vector<std::string>& tokens,
                            const std::string& scene,
                            const std::string& exitSequence,
                            int autoHideSec)
 {
-    // The trigger leads the row: the list says what to type, not only what the
-    // scene looks like.
-    std::string subtitle = "boss " + token + " · "
-        + tr(zh, "Enter 全屏伪装 · 键入 ", "Enter to cover · type ")
+    // The triggers lead the row: every word that reaches this scene, so the list
+    // says what to type rather than only what the scene looks like.
+    std::string subtitle = "boss ";
+    for (std::size_t i = 0; i < tokens.size(); ++i)
+        subtitle += (i == 0 ? "" : " / ") + tokens[i];
+    subtitle += " · " + tr(zh, "Enter 全屏伪装 · 键入 ", "Enter to cover · type ")
         + exitSequence + tr(zh, " 退出", " to exit");
     if (autoHideSec > 0) {
         const std::string secs = std::to_string(autoHideSec);
         subtitle += zh ? " · " + secs + " 秒后自动消失"
                        : " · auto-dismiss in " + secs + "s";
     }
-    winshun::Item row("cover:" + token, sceneTitle(zh, scene), subtitle);
+    winshun::Item row("cover:" + tokens.front(), sceneTitle(zh, scene), subtitle);
     const char* color = scene == bosskey::kSceneBlackhole ? "#D97706"
                       : scene == bosskey::kSceneMatrix ? "#16A34A"
                       : scene == bosskey::kSceneGcc ? "#4EC9B0"
@@ -95,7 +100,7 @@ winshun::Item makeSceneRow(bool zh,
     row.withScore(100);
     row.withData(winshun::Json::Object {
         {"scene", scene},
-        {"token", token},
+        {"token", tokens.front()},
     });
     row.withActions({{"cover", tr(zh, "全屏伪装", "Cover the screen"), "Enter"}});
     return row;
@@ -119,26 +124,30 @@ class BossKeyPlugin final : public winshun::Plugin {
 
         winshun::Items items;
         if (word.empty()) {
-            for (const bosskey::SceneBinding& b : map)
-                items.push_back(makeSceneRow(zh, b.token, b.scene, st.exitSequence, st.autoHideSec));
+            // One row per scene; each row names every word that reaches it.
+            for (const bosskey::SceneBinding& b : bosskey::canonicalBindings(map))
+                items.push_back(makeSceneRow(zh, bosskey::tokensForScene(map, b.scene),
+                                             b.scene, st.exitSequence, st.autoHideSec));
             return items;
         }
         const std::string scene = bosskey::resolveScene(map, word);
         if (scene.empty()) {
             std::string known;
-            for (const bosskey::SceneBinding& b : map) {
+            for (const bosskey::SceneBinding& b : bosskey::canonicalBindings(map)) {
                 if (!known.empty())
                     known += " / ";
                 known += b.token;
             }
             winshun::Item hint("unknown", tr(zh, "未知场景：", "Unknown scene: ") + word,
                                tr(zh, "可用子词：", "Available tokens: ") + known
-                                   + tr(zh, "（插件设置里可改）", " (configurable in settings)"));
+                                   + tr(zh, "（全拼、缩写也行；插件设置里可改）",
+                                        " (full pinyin and initials work too; configurable in settings)"));
             hint.withIcon("color:#E8A33D");
             hint.withScore(50);
             return {hint};
         }
-        return {makeSceneRow(zh, word, scene, st.exitSequence, st.autoHideSec)};
+        return {makeSceneRow(zh, bosskey::tokensForScene(map, scene), scene,
+                             st.exitSequence, st.autoHideSec)};
     }
 
     winshun::Effects action(const winshun::ActionRequest& a) override
