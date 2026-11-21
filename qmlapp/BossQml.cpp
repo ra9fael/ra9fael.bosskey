@@ -108,7 +108,6 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
 {
     ensureEngine();
     g_controller->applySpec(spec);
-    g_controller->setEnhanced(enhanced);
 
     QList<QScreen*> targets;
     if (spec.windowed && spec.previewScreen >= 0) {
@@ -197,7 +196,6 @@ bool guiShow(const CoverSpec& spec, std::string& error, GuardLaunch* launch)
                 emit g_controller->exitRequested();
             }, [] {
                 g_guard->stop();
-                g_controller->setEnhanced(false);
                 QString failure;
                 if (!startOrdinary(failure))
                     guiHide();

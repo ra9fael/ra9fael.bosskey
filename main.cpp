@@ -20,6 +20,7 @@ struct Settings {
     int autoHideSec = 0;
     std::string gccProject = "winshun-core";
     bool allScreens = false;
+    bool uacGuard = false;
 };
 
 Settings readSettings(const winshun::Json& s)
@@ -48,6 +49,7 @@ Settings readSettings(const winshun::Json& s)
         st.autoHideSec = 0;
     st.gccProject = bosskey::trim(text("gccProject", "winshun-core"));
     st.allScreens = bosskey::lower(text("displayAll", "mouse")) == "all";
+    st.uacGuard = s["uacGuard"].toBool();
     return st;
 }
 
@@ -164,7 +166,7 @@ class BossKeyPlugin final : public winshun::Plugin {
         spec.gccProject = st.gccProject;
         spec.allScreens = st.allScreens;
         spec.zh = zh;
-        spec.enhanced = true;
+        spec.enhanced = st.uacGuard;
         std::string error;
         bosskey::GuardLaunch launch;
         if (!bosskey::showCover(spec, error, &launch)) {

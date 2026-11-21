@@ -17,7 +17,7 @@ The result list stays presentable; the fullscreen part does not.
 | `boss matrix` / `daimayu` / `dmy` | fullscreen Matrix-style digital rain (katakana, digits and Latin letters with fading trails) |
 | `boss blackhole` / `heidong` / `hd` | fullscreen black hole (an opaque star field bent into arcs; the disk spreads before the hole grows, then the hole wanders) |
 
-Press Enter to request UAC once and start the cover. Accepting enables enhanced protection; declining or a guard startup failure selects ordinary mode. Type the exit key sequence to return. Each scene answers to three words: its English name, the full Mandarin pinyin and the pinyin initials (`boss hd` = `boss heidong` = `boss blackhole`), and every search result row lists them; any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
+Press Enter to start the cover; with "Request UAC input protection" enabled it asks for consent once and accepting selects enhanced protection, while leaving it off or declining selects ordinary mode. Type the exit key sequence to return. Each scene answers to three words: its English name, the full Mandarin pinyin and the pinyin initials (`boss hd` = `boss heidong` = `boss blackhole`), and every search result row lists them; any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
 
 `boss blackhole` paints an opaque procedural star field. It neither captures the desktop nor minimizes other windows. The lens bends the stars around a pure-black shadow.
 
@@ -30,6 +30,7 @@ Press Enter to request UAC once and start the cover. Accepting enables enhanced 
 | Auto-dismiss seconds | `0` | 0 = keep the cover until dismissed manually |
 | gcc scene project name | `winshun-core` | the target name shown in the build output |
 | Display coverage | `mouse` | `mouse` = cover only the screen with the mouse; `all` = cover every display |
+| Request UAC input protection | `false` | on = request UAC once per cover start, then match the exit sequence even without focus; off = no UAC prompt, keys are suppressed only while the cover has focus |
 
 The top-level keyword `boss` comes from plugin.json (a protocol limit — settings cannot change it); the sub-tokens, exit sequence, and timeout are all in settings.
 
@@ -37,7 +38,7 @@ The top-level keyword `boss` comes from plugin.json (a protocol limit — settin
 
 It requests `ui` and `processes`: it creates the cover windows and asks the host to start the fixed, bundled `bosskey-guard.exe`. WinShun requires confirmation of the added permission. The plugin itself remains in `sandbox: strict`; only the separate input guard requests elevation.
 
-Each cover start requests UAC once, before showing the cover. Accepting enables enhanced protection after the guard is ready; declining or a startup failure selects ordinary mode without another prompt. A brief bottom-right label identifies the mode. The enhanced guard suppresses letters, digits and the supported shell shortcuts and matches the exit sequence without focus. Ordinary mode does not guarantee suppression across integrity levels when focus is lost.
+With "Request UAC input protection" enabled, each cover start asks for consent once and waits for the guard before showing the cover; accepting lets the elevated guard suppress letters, digits and the supported shell shortcuts and match the exit sequence without focus. It is off by default; declining or a guard startup failure also leaves ordinary mode without another prompt. Ordinary mode suppresses keys only while the cover has focus and does not guarantee suppression across integrity levels when focus is lost.
 
 The guard loads no QML, accepts no arbitrary program or command, and neither stores nor forwards individual keystrokes. Its pipe carries only readiness, exit, stop and error states. Closing the cover drains swallowed-key releases; plugin exit, a crash or pipe disconnection ends the guard. This cover is not a Windows lock screen and cannot block secure attention sequences such as Ctrl+Alt+Del.
 
@@ -47,7 +48,7 @@ The covers render through D3D11 — the black hole scene is a fragment shader th
 
 Requires **WinShun 0.22.0 or later** (the plugin declares the host's shared-Qt contract, `runtime.qt: "host"`, and reuses WinShun's Qt 6.12; no Qt is bundled). Either way:
 
-- double-click `dist/ra9fael.bosskey-0.1.2.wsplugin` and WinShun walks you through it;
+- double-click `dist/ra9fael.bosskey-0.1.3.wsplugin` and WinShun walks you through it;
 - or in WinShun: Plugins → Install from archive.
 
 ## Building from source
@@ -59,7 +60,7 @@ Windows + MSVC + Ninja + Qt 6 (the same source WinShun uses):
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=<Qt's msvc dir>
 cmake --build build
 ctest --test-dir build          # pure-logic tests
-python tools/package.py         # dist/ra9fael.bosskey-0.1.2.wsplugin
+python tools/package.py         # dist/ra9fael.bosskey-0.1.3.wsplugin
 ```
 
 Outputs: `bosskey.exe` (a Qt-less starter), `BossKeyApp.dll` (the QML cover), and `bosskey-guard.exe` (the optional elevated input guard, without Qt and with a static CRT).

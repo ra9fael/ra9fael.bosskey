@@ -1,0 +1,27 @@
+{
+  "runner": "C:\\Program Files\\WinShun\\WinShunPluginHost.exe",
+  "strict": true,
+  "runner_integrity": 8192,
+  "cover_integrity": 4096,
+  "exe": "C:\\Users\\renfei\\AppData\\Local\\Temp\\opencode\\bosskey-uac-input\\bosskey.exe",
+  "settings": {
+    "uacGuard": true
+  },
+  "action_effects": [
+    {
+      "type": "hide"
+    },
+    {
+      "args": "--session b2def472-8190-46fa-8352-3d8b8912fc16 --owner 43136 --sequence deadbeef",
+      "path": "C:/Users/renfei/AppData/Local/Temp/opencode/bosskey-uac-input/bosskey-guard.exe",
+      "type": "open"
+    }
+  ],
+  "guard_requested": true,
+  "cover_deferred_until_guard": true,
+  "exit_code": 0,
+  "stderr": [
+    "ra9fael.bosskey: serve() returned 0"
+  ],
+  "guard_processes": []
+}

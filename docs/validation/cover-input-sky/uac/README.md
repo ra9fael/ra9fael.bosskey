@@ -16,16 +16,18 @@ The plugin ran through the installed `C:\Program Files\WinShun\WinShunPluginHost
 | Plugin job terminated | Helper exited; Win+R restored | `crash-runner.json` |
 | Elevated helper terminated while the cover remains | Ordinary fallback without another launch request; focused exit works; Win+R restored | `disconnect-*.json` |
 | Timed cover closure | Helper exited; Win+R restored | `autohide-runner.json` |
+| `uacGuard` setting on, through the resident action path | The action answered with the guard's `open` effect; no cover appeared before the guard was ready; plugin exited 0 with no helper left | `settings-runner.json` |
+| Cover after the mode label was removed | No on-screen mode text; ordinary fallback still exits and restores Win+R | `fallback-runner.json`, `fallback-input.json`, `cover.png` |
 
 Native no-focus exit and focused QML exit are separate acceptance cases. The no-focus tests send a non-sequence letter followed by `deadbeef` to the external target; only character counts, not typed-text contents, are recorded. The shortcut cases cover Ctrl+Shift+Esc, Shift+F10, Alt+Tab, Alt+Esc, Alt+F4, Win+D, Win+R and the Windows key.
 
 `bosskey_logic` and `bosskey_input` pass under MSVC Release. The input-policy tests cover overlapping sequences, auto-repeat, modifier state, numpad digits, one exit notification per cover, and draining swallowed repeats/key-up events. The guard executable has no Qt dependency and uses the static CRT.
 
-The two small screenshots show the brief mode label: `enhanced.png` and `ordinary.png`. Raw controller output is generated in `build/uac-input/validation/`; only selected result files and these screenshots are retained here. The isolated runtime deployment at `C:\Users\renfei\AppData\Local\Temp\opencode\bosskey-uac-input` was removed after installation verification.
+The cover draws no mode label: 0.1.3 removed the brief enhanced/ordinary text so nothing on screen betrays the disguise. `cover.png` is the 480×270 cover of the ordinary fallback run; the mode is recorded in the runner logs (`protection=enhanced|ordinary`) instead. Raw controller output is generated in `build/uac-input/validation/`; only selected result files and this screenshot are retained here. The isolated runtime deployment at `C:\Users\renfei\AppData\Local\Temp\opencode\bosskey-uac-input` was removed after installation verification.
 
 ## Local installation
 
-The 0.1.2 package passes `tools/ci_release.py` package verification and has been installed through `ws plugin install`. The user has confirmed the new `processes` permission in WinShun, and the plugin is running. The installed starter, DLL and input helper are byte-for-byte equal to the packaged build. The resident plugin is verified restricted/Low (4096), without UIAccess; no guard process remains while the cover is inactive. These final installation facts are in `installed.json`. The existing `v0.1.1` tag and its release assets are unchanged.
+The 0.1.3 package passes `tools/ci_release.py` package verification and has been installed through `ws plugin install` as an upgrade of 0.1.2. The permission set is unchanged (`ui`, `processes`), so no new consent was needed, and the plugin is running. The installed starter, DLL and input helper are byte-for-byte equal to the packaged build. The resident plugin is verified restricted/Low (4096), without UIAccess; no guard process remains while the cover is inactive. These final installation facts are in `installed.json`. The existing `v0.1.1` tag and its release assets are unchanged.
 
 ## Reproduction
 
@@ -35,6 +37,7 @@ Use a runtime deployment whose executables retain ordinary installed-file integr
 python tools/verify/strict_preview.py guard build/uac-input/validation/medium --exe <runtime>/bosskey.exe --enhanced
 python tools/verify/strict_preview.py guard build/uac-input/validation/qml --exe <runtime>/bosskey.exe --focused-qml
 python tools/verify/strict_preview.py guard build/uac-input/validation/cancel --exe <runtime>/bosskey.exe --simulate-guard-error 1223
+python tools/verify/strict_preview.py settings build/uac-input/validation/settings --exe <runtime>/bosskey.exe
 ```
 
 For the High Integrity external target and lifecycle cases, run `tools/verify/uac_suite.ps1 -Runtime <runtime>` as administrator. It elevates only the isolated verification controller, not the user's resident WinShun. For an actual consent-rejection check, run the Medium Integrity controller with `--enhanced --expect-declined` and decline the displayed UAC request.

@@ -5,12 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.2] - 2026-11-21
+## [0.1.3] - 2026-11-21
 
 ### Added
 
-- Add an optional UAC input guard without Qt. The host starts the fixed helper through its existing open effect; the cover plugin remains strict and Low Integrity. Each cover start requests consent at most once and shows the cover only after guard readiness or ordinary-mode fallback.
-- Show a brief enhanced/ordinary protection label. Declining consent, helper startup failure or guard disconnection selects ordinary mode without another prompt.
+- Add an optional UAC input guard without Qt. The host starts the fixed helper through its existing open effect; the cover plugin remains strict and Low Integrity. When enabled, each cover start requests consent at most once and shows the cover only after guard readiness or ordinary-mode fallback.
 - Drain swallowed key repeats and releases before removing the keyboard hook. The elevated guard exits when the cover closes, its owner exits or its pipe disconnects; it sends no individual key data and accepts no arbitrary commands.
 - Add shared input-policy tests and separate windowed acceptance modes for native no-focus exit, focused QML exit, fallback and guard lifecycle.
 - Add a cover-scoped keyboard hook on a separate message-loop thread for common shell and window-switching shortcuts. Exit matching stores only a sequence-prefix length; the hook is removed on hide and shutdown.
@@ -22,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The UAC input guard is opt-in through the new `uacGuard` setting and off by default: a consent prompt in front of the cover gives the disguise away, so ordinary mode is what `boss` does unless the setting is enabled. Switching the setting off, declining consent, a helper startup failure or guard disconnection all settle on ordinary mode without another prompt.
 - Request `processes` in addition to `ui` so WinShun can launch the fixed helper. Updating requires confirmation of the added permission; it does not elevate the plugin or WinShun.
 - Include `bosskey-guard.exe` as a required runtime asset in packaging and package validation.
 - Sub-triggers are the scenes' own names plus the full pinyin and the pinyin initials — `boss blackhole`, `boss heidong`, `boss hd` all reach the same scene — and every search result row names all three (`boss blackhole / heidong / hd · Enter 全屏伪装 · 键入 deadbeef 退出`), with the command hint listing all five groups. One scene may be bound to any number of words, so a custom map still works; the listing still shows five rows, one per scene.

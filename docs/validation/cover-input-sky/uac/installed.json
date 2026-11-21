@@ -1,5 +1,9 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.3",
+  "permissions": [
+    "ui",
+    "processes"
+  ],
   "binary_bytes_match": {
     "bosskey.exe": true,
     "BossKeyApp.dll": true,
@@ -7,7 +11,7 @@
   },
   "plugin_processes": [
     {
-      "pid": 20816,
+      "pid": 25644,
       "integrity": 4096,
       "restricted": true,
       "ui_access": false

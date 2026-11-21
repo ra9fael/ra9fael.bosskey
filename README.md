@@ -17,7 +17,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 | `boss matrix` / `daimayu` / `dmy` | 全屏黑客帝国代码雨（片假名、数字与拉丁字母，绿色渐隐轨迹） |
 | `boss blackhole` / `heidong` / `hd` | 全屏黑洞（不透明星空被引力透镜扭曲；吸积盘先铺开、黑洞随后长大，之后随机游走） |
 
-回车启动伪装并请求一次 UAC；允许后启用增强防护，拒绝或守卫启动失败则使用普通模式，键入退出按键序列即返回。每个场景认三个词：英文全称、中文全拼、拼音首字母（`boss hd` 等于 `boss heidong` 等于 `boss blackhole`），搜索结果里每一行都列着这三个词；想换别的词在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。
+回车启动伪装；设置里打开“请求 UAC 增强输入防护”后，每次先请求一次 UAC，允许则启用增强防护，关闭或拒绝则使用普通模式。键入退出按键序列即返回。每个场景认三个词：英文全称、中文全拼、拼音首字母（`boss hd` 等于 `boss heidong` 等于 `boss blackhole`），搜索结果里每一行都列着这三个词；想换别的词在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。
 
 `boss blackhole` 绘制不透明的程序化星空，不采集桌面、不最小化其他窗口。引力透镜弯曲星空，黑洞阴影保持纯黑。
 
@@ -30,6 +30,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 | 自动消失秒数 | `0` | 0 = 一直伪装到手动退出 |
 | gcc 场景项目名 | `winshun-core` | 编译输出显示的目标名 |
 | 显示器覆盖 | `mouse` | `mouse` = 只盖鼠标所在的屏幕；`all` = 盖住所有显示器 |
+| 请求 UAC 增强输入防护 | `false` | 开 = 每次启动伪装先请求一次 UAC，允许后失焦也能拦截退出序列；关 = 不弹 UAC，只在封面有焦点时拦截按键 |
 
 顶层关键字 `boss` 来自 plugin.json（协议限制，设置改不了）；子触发词、退出序列、超时都在设置里改。
 
@@ -37,7 +38,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 申请 `ui` 和 `processes`：创建伪装窗口，由宿主启动包内固定的 `bosskey-guard.exe`。新增权限需要在 WinShun 中确认，插件主体仍为 `sandbox: strict`，不随守卫提权。
 
-每次启动伪装先等待 UAC 结果与守卫就绪，再显示封面。允许后，独立管理员守卫抑制字母数字与约定快捷键，并在失焦时匹配退出序列；拒绝或启动失败只回退普通模式，不重复请求。右下角短暂显示“增强防护”或“普通模式”。普通模式不保证失焦后的跨权限按键抑制。
+设置里打开“请求 UAC 增强输入防护”（默认关闭）后，每次启动伪装先请求一次 UAC，等到守卫就绪再显示封面；允许后独立管理员守卫抑制字母数字与约定快捷键，并在失焦时匹配退出序列。关闭该设置、拒绝授权或守卫启动失败都只使用普通模式，不重复请求。普通模式只在封面有焦点时拦截按键，不保证失焦后的跨权限抑制。
 
 守卫不加载 QML、不接受任意程序或命令、不保存或转发逐键输入；通信只有就绪、退出、停止与错误状态。封面关闭时处理已吞按键的释放；插件退出、崩溃或管道断开后守卫退出，不常驻。增强防护不替代 Windows 锁屏，也不能拦截 Ctrl+Alt+Del 等安全注意序列。
 封面跑在 D3D11 上（黑洞场景是逐像素积分测地线的 fragment shader，Qt 的软件光栅画不出
@@ -47,7 +48,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 需要 WinShun **0.22.0 或更新**（插件声明了宿主的共享 Qt 契约 `runtime.qt: "host"`，复用 WinShun 的 Qt 6.12，包内不含 Qt）。两种安装方式：
 
-- 双击 `dist/ra9fael.bosskey-0.1.2.wsplugin`，WinShun 会引导安装；
+- 双击 `dist/ra9fael.bosskey-0.1.3.wsplugin`，WinShun 会引导安装；
 - 或 WinShun 里「插件 → 从归档安装」。
 
 ## 从源码构建
@@ -59,7 +60,7 @@ Windows + MSVC + Ninja + Qt 6（与 WinShun 同源）：
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=<Qt 的 msvc 目录>
 cmake --build build
 ctest --test-dir build          # 纯逻辑单测
-python tools/package.py         # dist/ra9fael.bosskey-0.1.2.wsplugin
+python tools/package.py         # dist/ra9fael.bosskey-0.1.3.wsplugin
 ```
 
 产物：源码目录下的 `bosskey.exe`（无 Qt 启动器）、`BossKeyApp.dll`（QML 伪装窗口）和 `bosskey-guard.exe`（无 Qt、静态 CRT 的可选管理员输入守卫）。

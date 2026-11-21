@@ -33,7 +33,7 @@ def percentile(values, fraction):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("task", choices=["guard", "sky", "performance", "crash", "disconnect", "autohide"])
+    parser.add_argument("task", choices=["guard", "sky", "performance", "crash", "disconnect", "autohide", "settings"])
     parser.add_argument("output", type=Path)
     parser.add_argument("--exe", type=Path, default=Path(os.environ["LOCALAPPDATA"]) /
                         "WinShun/plugins/ra9fael.bosskey/bosskey.exe")
@@ -59,17 +59,20 @@ def main():
     child_rc = None
     helpers = []
 
-    def send(message):
+    def write_line(prefix, text):
         operation = pywintypes.OVERLAPPED()
         operation.hEvent = win32event.CreateEvent(None, True, False, None)
         try:
-            win32file.WriteFile(pipe, ("_ " + json.dumps(message) + "\n").encode("utf-8"), operation)
+            win32file.WriteFile(pipe, (prefix + text + "\n").encode("utf-8"), operation)
             if win32event.WaitForSingleObject(operation.hEvent, 10000) != win32event.WAIT_OBJECT_0:
                 win32file.CancelIoEx(pipe, operation)
                 raise TimeoutError("runner control write")
             win32file.GetOverlappedResult(pipe, operation, False)
         finally:
             win32file.CloseHandle(operation.hEvent)
+
+    def send(message):
+        write_line("_ ", json.dumps(message))
 
     def read_messages():
         pending = b""
@@ -85,6 +88,16 @@ def main():
                     line, pending = pending.split(b"\n", 1)
                     if line.startswith(b"_ "):
                         message = json.loads(line[2:])
+                        events.append(message)
+                        messages.put(message)
+                    elif b" " in line:
+                        # "<instance> <json>" is a line of the plugin's own stdout.
+                        _, _, payload = line.partition(b" ")
+                        try:
+                            answer = json.loads(payload)
+                        except json.JSONDecodeError:
+                            continue
+                        message = {"op": "message", "id": answer.get("id"), "message": answer}
                         events.append(message)
                         messages.put(message)
         except pywintypes.error:
@@ -128,8 +141,9 @@ def main():
         threading.Thread(target=read_messages, daemon=True).start()
         wait_for("hello")
         duration = 38 if args.task == "performance" else (10 if args.task == "autohide" else 25)
-        command = ["--cover", "blackhole", "--windowed", "--screen", "0", "--autohide", str(duration),
-                   "--app-dir", str(args.host)]
+        command = [] if args.task == "settings" else [
+            "--cover", "blackhole", "--windowed", "--screen", "0", "--autohide", str(duration),
+            "--app-dir", str(args.host)]
         enhanced = args.enhanced or args.simulate_guard_error is not None
         if args.focused_qml and enhanced:
             raise ValueError("native and focused QML acceptance must run separately")
@@ -141,9 +155,59 @@ def main():
             command += ["--metrics", str(args.output / "frames.json")]
         send({"op": "start", "id": 1, "exe": str(args.exe.resolve()), "args": command,
               "cwd": str(args.exe.resolve().parent), "strict": True, "ui": True,
-              "memoryMB": 1024, "processes": False, "stdin": False, "encoding": "utf-8",
-              "qtDir": str(args.host), "env": [["WS_APP_DIR", str(args.host)]]})
+              "memoryMB": 1024, "processes": args.task == "settings", "stdin": args.task == "settings",
+              "encoding": "utf-8", "qtDir": str(args.host),
+              "env": [["WS_APP_DIR", str(args.host)]]})
         started = wait_for("started")
+        if args.task == "settings":
+            # The resident action path: a setting decides whether the guard is requested.
+            rpc_id = 0
+
+            def rpc(method, params):
+                nonlocal rpc_id
+                rpc_id += 1
+                write_line("1 ", json.dumps({"jsonrpc": "2.0", "id": rpc_id, "method": method,
+                                             "params": params}))
+                until = time.monotonic() + 20
+                while time.monotonic() < until:
+                    event = messages.get(timeout=max(0.01, until - time.monotonic()))
+                    if event.get("op") == "message" and event.get("id") == rpc_id:
+                        return event["message"]["result"]
+                    if event.get("op") in ("failed", "exited"):
+                        raise RuntimeError(event)
+                raise TimeoutError(method)
+
+            facts = {"runner": str(args.host / "WinShunPluginHost.exe"), "strict": True,
+                     "runner_integrity": desktop.integrity(runner.pid),
+                     "cover_integrity": desktop.integrity(started["pid"]),
+                     "exe": str(args.exe.resolve()), "settings": {"uacGuard": True}}
+            rpc("initialize", {"settings": {"uacGuard": True, "exitSequence": "deadbeef"},
+                               "locale": "en", "theme": "light"})
+            effects = rpc("action", {"command": "boss", "action": "cover", "text": "bsod",
+                                     "item": {"data": {"scene": "bsod"}}}).get("effects", [])
+            facts["action_effects"] = effects
+            guard = [effect for effect in effects if effect.get("type") == "open"]
+            assert guard, "uacGuard=true in settings did not request the input guard"
+            assert Path(guard[0]["path"]).name == "bosskey-guard.exe", guard
+            facts["guard_requested"] = True
+            assert not shot.find_visible_cover(), "the cover must wait for the guard before showing"
+            facts["cover_deferred_until_guard"] = True
+            rpc("shutdown", {})
+            exited = wait_for("exited", timeout=30)
+            facts["exit_code"] = exited["code"]
+            facts["stderr"] = [event["text"] for event in events if event.get("op") == "stderr"]
+            facts["guard_processes"] = []
+            for process in psutil.process_iter():
+                try:
+                    if process.name() == "bosskey-guard.exe":
+                        facts["guard_processes"].append(process.pid)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+            assert exited["code"] == 0, exited
+            assert not facts["guard_processes"], "a cancelled guard start left a helper behind"
+            (args.output / "runner.json").write_text(json.dumps(facts, indent=2) + "\n", encoding="utf-8")
+            print(json.dumps(facts, indent=2))
+            return 0
         if enhanced:
             line = wait_for_log("guard-launch=", 10)
             launch = json.loads(line.split("guard-launch=", 1)[1])

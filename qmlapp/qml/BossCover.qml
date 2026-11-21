@@ -65,41 +65,4 @@ Window {
         }
         Component.onCompleted: forceActiveFocus()
     }
-
-    Rectangle {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.margins: 12
-        width: protectionLabel.implicitWidth + 16
-        height: protectionLabel.implicitHeight + 10
-        radius: 4
-        color: "#cc151515"
-        visible: root.cover.shown && protectionTimer.running
-        Text {
-            id: protectionLabel
-            anchors.centerIn: parent
-            color: "#eeeeee"
-            font.pixelSize: 12
-            text: root.cover.enhanced
-                ? (root.cover.zh ? qsTr("增强防护") : qsTr("Enhanced protection"))
-                : (root.cover.zh ? qsTr("普通模式") : qsTr("Ordinary mode"))
-        }
-    }
-    Timer {
-        id: protectionTimer
-        interval: 4000
-    }
-    Connections {
-        target: root.cover
-        function onShownChanged() {
-            if (root.cover.shown)
-                protectionTimer.restart()
-            else
-                protectionTimer.stop()
-        }
-        function onProtectionChanged() {
-            if (root.cover.shown)
-                protectionTimer.restart()
-        }
-    }
 }
