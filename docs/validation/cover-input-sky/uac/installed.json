@@ -1,0 +1,17 @@
+{
+  "version": "0.1.2",
+  "binary_bytes_match": {
+    "bosskey.exe": true,
+    "BossKeyApp.dll": true,
+    "bosskey-guard.exe": true
+  },
+  "plugin_processes": [
+    {
+      "pid": 20816,
+      "integrity": 4096,
+      "restricted": true,
+      "ui_access": false
+    }
+  ],
+  "guard_processes": []
+}

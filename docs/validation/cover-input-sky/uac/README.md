@@ -21,11 +21,11 @@ Native no-focus exit and focused QML exit are separate acceptance cases. The no-
 
 `bosskey_logic` and `bosskey_input` pass under MSVC Release. The input-policy tests cover overlapping sequences, auto-repeat, modifier state, numpad digits, one exit notification per cover, and draining swallowed repeats/key-up events. The guard executable has no Qt dependency and uses the static CRT.
 
-The two small screenshots show the brief mode label: `enhanced.png` and `ordinary.png`. Source evidence is in `build/uac-input/validation/`; only selected result files and these screenshots are retained here. The temporary runtime staging path is `C:\Users\renfei\AppData\Local\Temp\opencode\bosskey-uac-input`.
+The two small screenshots show the brief mode label: `enhanced.png` and `ordinary.png`. Raw controller output is generated in `build/uac-input/validation/`; only selected result files and these screenshots are retained here. The isolated runtime deployment at `C:\Users\renfei\AppData\Local\Temp\opencode\bosskey-uac-input` was removed after installation verification.
 
 ## Local installation
 
-The 0.1.2 package passes `tools/ci_release.py` package verification and has been installed through `ws plugin install`. The installed starter, DLL and input helper are byte-for-byte equal to the packaged build. WinShun has suspended the plugin pending the user's confirmation of the new `processes` permission; that confirmation is not supplied by the test controller. The existing `v0.1.1` tag and its release assets are unchanged.
+The 0.1.2 package passes `tools/ci_release.py` package verification and has been installed through `ws plugin install`. The user has confirmed the new `processes` permission in WinShun, and the plugin is running. The installed starter, DLL and input helper are byte-for-byte equal to the packaged build. The resident plugin is verified restricted/Low (4096), without UIAccess; no guard process remains while the cover is inactive. These final installation facts are in `installed.json`. The existing `v0.1.1` tag and its release assets are unchanged.
 
 ## Reproduction
 
