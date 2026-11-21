@@ -88,7 +88,9 @@ int main()
     expect(!validSequence(std::wstring(65, L'a')), "guard bounds sequence arguments");
     expect(validSession(L"12345678-1234-1234-1234-123456789abc"), "guard accepts session IDs");
     expect(!validSession(L"..\\another-pipe"), "guard rejects arbitrary pipe paths");
-    expect(!elevated(INVALID_HANDLE_VALUE), "invalid process handles cannot enable enhanced mode");
+    // INVALID_HANDLE_VALUE is the current process's pseudo handle, so it is no
+    // test of a failure path: a null handle is neither openable nor a pseudo one.
+    expect(!elevated(nullptr), "a null process handle cannot enable enhanced mode");
     std::printf("Input policy: %s\n", failures ? "FAILED" : "passed");
     return failures ? 1 : 0;
 }
