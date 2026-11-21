@@ -31,41 +31,57 @@ void expectEq(const std::string& got, const std::string& want, const char* what)
 
 void testSceneMap()
 {
-    const auto map = bosskey::parseSceneMap("b=bsod, u=update;t=gcc");
+    const auto map = bosskey::parseSceneMap("bsod=bsod, u=update;t=gcc");
     expect(map.size() == 3, "map: three valid pairs");
-    expectEq(map[0].token, "b", "map: first token");
+    expectEq(map[0].token, "bsod", "map: first token");
     expectEq(map[0].scene, "bsod", "map: first scene");
     expectEq(map[2].scene, "gcc", "map: third scene");
 
     // Case and spaces are normalized; duplicates collapse to the first.
-    const auto folded = bosskey::parseSceneMap("B = BSOD , b=gcc");
+    const auto folded = bosskey::parseSceneMap("BSOD = BSOD , bsod=gcc");
     expect(folded.size() == 1, "map: case-folded and deduplicated");
     expectEq(folded[0].scene, "bsod", "map: first binding wins");
 
     // Junk is skipped, not fatal; a wrong scene id does not enter the map.
-    expect(bosskey::parseSceneMap("x=purple,,=bsod,verylongtoken=bsod").empty(),
+    expect(bosskey::parseSceneMap("x=purple,,=bsod").empty(),
            "map: invalid pairs skipped");
+
+    // A token is a whole word, so full scene names parse, and the alphabets
+    // are free: single letters of earlier versions and Chinese words both bind.
+    expect(bosskey::parseSceneMap("verylongtoken=bsod").size() == 1,
+           "map: multi-character tokens accepted");
+    expect(bosskey::parseSceneMap("b=bsod,h=blackhole").size() == 2,
+           "map: the old single letters still bind");
+    const auto chinese = bosskey::parseSceneMap("黑洞=blackhole");
+    expect(chinese.size() == 1 && chinese[0].token == "黑洞",
+           "map: a UTF-8 token round-trips");
+    expect(bosskey::parseSceneMap("two words=bsod").empty(),
+           "map: a token with a space is refused");
+    expect(bosskey::parseSceneMap(std::string(bosskey::kTokenMax + 1, 'x') + "=bsod").empty(),
+           "map: an overlong token is refused");
 
     // Empty or unparsable text gives the empty map (callers fall back).
     expect(bosskey::parseSceneMap("").empty(), "map: empty text");
     expect(bosskey::parseSceneMap("nothing here").empty(), "map: no pairs");
 
-    // The default map binds the three documented tokens.
+    // The default map binds the five scenes by their full names.
     const auto def = bosskey::defaultSceneMap();
     expect(def.size() == 5, "default map: five tokens");
-    expectEq(bosskey::resolveScene(def, "b"), bosskey::kSceneBsod, "resolve: b -> bsod");
-    expectEq(bosskey::resolveScene(def, "T"), bosskey::kSceneGcc, "resolve: case-folded");
-    expectEq(bosskey::resolveScene(def, "m"), bosskey::kSceneMatrix, "resolve: m -> matrix");
+    expectEq(bosskey::resolveScene(def, "bsod"), bosskey::kSceneBsod, "resolve: bsod");
+    expectEq(bosskey::resolveScene(def, "UPDATE"), bosskey::kSceneUpdate,
+             "resolve: case-folded full name");
+    expectEq(bosskey::resolveScene(def, "matrix"), bosskey::kSceneMatrix, "resolve: matrix");
+    expectEq(bosskey::resolveScene(def, "blackhole"), bosskey::kSceneBlackhole,
+             "resolve: blackhole");
     expect(bosskey::isKnownScene(bosskey::kSceneMatrix), "scene: matrix is known");
     expect(bosskey::isKnownScene(bosskey::kSceneBlackhole), "scene: blackhole is known");
-    expectEq(bosskey::resolveScene(def, "h"), bosskey::kSceneBlackhole,
-             "resolve: h -> blackhole");
+    expectEq(bosskey::resolveScene(def, "h"), "", "resolve: no single letters by default");
     const auto allScenes = bosskey::parseSceneMap(
-        "b=bsod,u=update,t=gcc,m=matrix,h=blackhole");
-    expect(allScenes.size() == 5, "map: all five documented scenes parse");
+        "bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole");
+    expect(allScenes.size() == 5, "map: all five full names parse");
     expectEq(bosskey::resolveScene(def, "x"), "", "resolve: unbound token");
     expectEq(bosskey::resolveScene(def, ""), "", "resolve: empty word");
-    expectEq(bosskey::resolveScene(def, "b u"), "", "resolve: two words refused");
+    expectEq(bosskey::resolveScene(def, "bsod bsod"), "", "resolve: two words refused");
     expectEq(bosskey::resolveScene(bosskey::parseSceneMap(""), "b"), "",
              "resolve: empty map binds nothing");
 }

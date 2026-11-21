@@ -17,6 +17,9 @@
 // Differences from the reference: no struct or uniform arrays (the look is a flat
 // set of uniforms so it runs as a QML ShaderEffect), no procedural starfield (the
 // desktop is the backdrop now), and no work-area shield (nothing here to protect).
+// The cover opens on the untouched desktop and the hole grows in from below a
+// pixel (uHoleRadius, held dead centre by uGrow), so the arrival reads as a birth
+// rather than a scene cut.
 //
 // Baked with qsb (see CMakeLists.txt): GLSL 100 es / 120 / 150 + HLSL 50 + MSL 12.
 
@@ -50,6 +53,7 @@ layout(std140, binding = 0) uniform buf {
     float uBeam;
     float uOpacity;
     float uDilation;
+    float uGrow;
 };
 
 layout(binding = 1) uniform sampler2D uDesktop;
@@ -106,11 +110,14 @@ void main() {
     float t      = uTime;
 
     // The hole drifts on a slow Lissajous path; uSeed decorrelates the screens.
-    vec2 center = vec2(0.5, 0.5)
-        + vec2(0.060 * sin(t * 0.210 + uSeed * TAU) + 0.030 * sin(t * 0.083 + uSeed * 2.1),
+    // uGrow keeps it dead centre while it arrives, then fades the drift in.
+    vec2 center = vec2(0.5, 0.5) + uGrow
+        * vec2(0.060 * sin(t * 0.210 + uSeed * TAU) + 0.030 * sin(t * 0.083 + uSeed * 2.1),
                0.050 * sin(t * 0.157 + 2.0 + uSeed * 4.0) + 0.030 * sin(t * 0.117 + uSeed));
 
-    float rh    = max(uHoleRadius, 0.004);
+    // The floor only keeps W finite: the arrival starts the hole below a pixel,
+    // so the cover opens on the untouched desktop.
+    float rh    = max(uHoleRadius, 0.0008);
     float dil   = clamp(uDilation, 0.05, 1.0);
     float small = step(rh, 0.085);   // 1 while the hole is small on screen
 

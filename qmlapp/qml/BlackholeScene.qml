@@ -11,9 +11,21 @@ Item {
     required property int screenIndex
 
     // Seconds of animation, advanced by the real elapsed time so the disk keeps
-    // its wall-clock pace whatever the frame rate; frozen while the cover hides.
+    // its wall-clock pace whatever the frame rate; frozen while the cover hides
+    // and rewound on every show, so the arrival plays again.
     property real t: 0
     property real lastTick: 0
+
+    // The arrival: the cover opens on the plain desktop — as if every window had
+    // been minimised — and then the hole grows from below a pixel to full size
+    // while the disk heats up and brightens. Smootherstep, so it is born slowly,
+    // opens fast and settles instead of stopping dead at full size.
+    readonly property real introHold: 0.6  // seconds of untouched desktop
+    readonly property real introGrow: 5.0  // seconds from a point to full size
+    readonly property real grow: {
+        const x = Math.max(0, Math.min(1, (root.t - root.introHold) / root.introGrow))
+        return x * x * x * (x * (x * 6 - 15) + 10)
+    }
 
     // The desktop snapshot the shader lenses. Invisible: only its texture is
     // sampled, never drawn. The epoch in the URL makes it reload when a new
@@ -33,13 +45,16 @@ Item {
         property real uTime: root.t
         property real uSeed: root.screenIndex * 0.618034
         property variant uDesktop: desktop
-        property real uHoleRadius: 0.125
+        // The arrival drives the size, the disk's gain and its temperature:
+        // a point of shadow that opens up and lights the scene as it grows.
+        property real uGrow: root.grow
+        property real uHoleRadius: 0.0008 + (0.125 - 0.0008) * root.grow
+        property real uGain: 0.06 + (1.1 - 0.06) * root.grow
+        property real uTemp: 2900 + (4200 - 2900) * root.grow
         property real uDiskInner: 1.8
         property real uDiskOuter: 8.0
         property real uIncl: 1.45
         property real uRoll: 0.35
-        property real uTemp: 4200
-        property real uGain: 1.1
         property real uExposure: 1.0
         property real uSpeed: 5.0
         property real uWind: 7.0
@@ -64,5 +79,15 @@ Item {
         }
     }
 
-    Component.onCompleted: root.lastTick = Date.now()
+    Component.onCompleted: {
+        root.lastTick = Date.now()
+        // Every show starts the arrival over, including a repeat of the same
+        // scene (the loader keeps this item alive across a hide).
+        root.cover.shownChanged.connect(function() {
+            if (!root.cover.shown)
+                return
+            root.t = 0
+            root.lastTick = Date.now()
+        })
+    }
 }

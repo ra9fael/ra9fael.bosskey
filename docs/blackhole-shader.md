@@ -13,7 +13,7 @@
 
 结论先说：**物理部分可以几乎原样移植，卡点在渲染后端**——本插件原来的软件光栅路径
 不渲染 `ShaderEffect`（已实测，见 [validation/shader-backend-probe](validation/shader-backend-probe)），
-所以进程整跑 D3D11，`plugin.json` 的 `memoryMB` 从 128 提到 1024。已落地为 `boss h`，
+所以进程整跑 D3D11，`plugin.json` 的 `memoryMB` 从 128 提到 1024。已落地为 `boss blackhole`，
 实测数字见第 10 节。
 
 ---
@@ -271,12 +271,12 @@ gain/contr/wind/speed/expo/star）。三个使用方：
 | 软件 | **完全不渲染** `ShaderEffect`，静默跳过，无报错 |
 | D3D11 | 正常渲染，`qt_MultiTexCoord0` 逐像素坐标正确 |
 
-即软件后端下 `boss h` 会是一片纯黑——一个静默的坏状态，所以它被整个移除了，
+即软件后端下 `boss blackhole` 会是一片纯黑——一个静默的坏状态，所以它被整个移除了，
 而不是留成开关。
 
 ### 场景实测
 
-`boss h`（`--cover blackhole`）在本机 1920×1080 全屏下：
+`boss blackhole`（`--cover blackhole`）在本机 1920×1080 全屏下：
 
 | 项目 | 数值 |
 |---|---|
@@ -294,7 +294,7 @@ gain/contr/wind/speed/expo/star）。三个使用方：
 
 ### 透明透镜：桌面就是背景
 
-封面窗口 `color: "transparent"`，桌面从窗口透出、被透镜扭曲后显示——`boss h` 不再隐藏
+封面窗口 `color: "transparent"`，桌面从窗口透出、被透镜扭曲后显示——`boss blackhole` 不再隐藏
 桌面内容。链路是：
 
 1. 窗口仍然隐藏时 `QScreen::grabWindow(0, rect)` 抓一份桌面快照。顺序很重要：窗口显示
@@ -316,6 +316,32 @@ gain/contr/wind/speed/expo/star）。三个使用方：
 星野因此整个删掉——桌面才是背景，星星浮在桌面上违和。退出序列、其余四个场景在透明
 窗口下都回归过，证据见 [validation/blackhole-desktop-lens](validation/blackhole-desktop-lens)。
 
+### 入场：先桌面，再长大
+
+封面每次显示都演一遍"出生"：先是**原样的桌面**（相当于所有应用最小化），然后黑洞在
+屏幕正中从亚像素长到满尺寸，吸积盘同步升温、变亮，最后落到稳态。没有动物理，全是
+QML 侧对既有 uniform 的时序：
+
+| 阶段 | 时长 | uniform |
+|---|---|---|
+| 纯桌面 | 0.6 s | `uHoleRadius` 0.0008（亚像素）、`uGain` 0.06、`uTemp` 2900 K；`uGrow`=0 |
+| 生长 | 5.0 s | smootherstep 0→1 推 `uHoleRadius` 0.0008→0.125、`uGain` 0.06→1.1、`uTemp` 2900→4200 K |
+| 稳态 | — | 与没有入场时完全一致 |
+
+三个细节：
+
+- **洞要从一个点长起来，`rh` 的下限就得放松**。`max(uHoleRadius, 0.004)` 在小屏上是一个
+  4 px 的黑点，会让"纯桌面"那一拍露馅，所以下限改成 0.0008（亚像素）。这个下限只为让
+  `W = B_CRIT / rh` 保持有限，别无他用。
+- **`uGrow` 压住漂移**。洞平时走一条缓慢的 Lissajous 曲线，入场期间把偏移乘 `uGrow`，
+  于是它先在正中出生、长成之后漂移才淡入——否则会一边膨胀一边满屏乱窜。
+- **入场时钟是封面自己的 `t`**，`shown` 变真时归零。场景 item 在 Loader 里可能跨多次
+  显示存活（同一个场景再触发一次不会重建），所以在 QML 里听 `shownChanged` 重置，
+  不要指望 `Component.onCompleted`。
+
+实测三帧与数字见 [validation/blackhole-intro](validation/blackhole-intro)。
+
+
 ## 11. 移植到 QML `ShaderEffect` 的具体改法
 
 Qt 6 的 `ShaderEffect` 只接受 `qsb` 烘焙过的 `.qsb`（`qsb --qt6`，产出 GLSL 100 es/120/150
@@ -325,7 +351,7 @@ Qt 6 的 `ShaderEffect` 只接受 `qsb` 烘焙过的 `.qsb`（`qsb --qt6`，产�
 |---|---|
 | `struct DiskLook` + `DiskLook[]` 预设数组 | 拆成 14 个 `property real`，预设交叉淡入改成 QML 侧两组属性 + `mix` uniform |
 | `iChannel0` 桌面纹理 | 换成**封面底下的桌面快照**：`QScreen::grabWindow` 抓图 → image provider → 不可见 `Image` 作采样源（`property variant uDesktop`）；`mirrorUV`、色差、天空平面投影原样保留 |
-| `iTime` | QML 属性 `property real t` + 30 fps `Timer`（`running: cover.shown`，隐藏即停；按真实经过时间累加，帧率不影响节奏） |
+| `iTime` | QML 属性 `property real t` + 30 fps `Timer`（`running: cover.shown`，隐藏即停；按真实经过时间累加，帧率不影响节奏；`shown` 变真时归零，入场因此每次重演） |
 | `iResolution` | `property real uAspect`，由 `width / height` 推出（shader 只需要宽高比） |
 | token 解码 / pomodoro / demo 巡回 | 删除，与插件无关 |
 | `#define N_STEPS 48`、`B_CRIT` | 原样保留（编译期常量） |
@@ -351,6 +377,8 @@ Qt 6 的 `ShaderEffect` 只接受 `qsb` 烘焙过的 `.qsb`（`qsb --qt6`，产�
 | `precision highp float;` | 不需要，qsb 会给 ES 目标注入精度限定 |
 | 透明窗口下整片窗口被着色 | D3D11 的透明合成按**预乘 alpha** 解释输出：alpha=0 的像素若仍带颜色，颜色照样叠到桌面上。输出写成 `vec4(col * alpha, alpha)` |
 | 快照里出现了封面自己 | 桌面快照必须在窗口**仍隐藏**时抓；显示后再 `grabWindow` 会把封面录进去，反馈成一圈套一圈的自相似 |
+| 入场只演一次，第二次 `boss blackhole` 直接是稳态 | `t` 只增不减，而场景 item 在 Loader 里跨多次显示存活。在 QML 里听 `cover.shownChanged`，`shown` 变真时把 `t` 与 `lastTick` 归零 |
+| 入场第一拍就露出一颗黑点 | `rh` 的旧下限 0.004 在小屏上约 4 px。下限降到 0.0008（亚像素），桌面才真是"原样" |
 
 版权：源码注释里保留 Bruneton 与参考仓库的署名（BSD-3 / MIT）。
 
@@ -362,9 +390,9 @@ Qt 6 的 `ShaderEffect` 只接受 `qsb` 烘焙过的 `.qsb`（`qsb --qt6`，产�
 |---|---|
 | 参考实现同款：真阴影边界、光子环、多普勒束流、多次穿盘形成的上下双弧、被弯成弧线的桌面 | 进程不再零 GPU：所有场景都吃 D3D11 初始化；单屏 1080p 私有提交 106 MB（原软件路径单屏 ~27.5 MB） |
 | 观感可调：色温、增益、倾角、转速都是 uniform，改一个数字就行 | `memoryMB` 是对已安装用户可见的 manifest 改动，1024 MB 已为多屏 swapchain 留足余量（双 2560×1440 参照早前记录约 210 MB） |
-| 封面透明：桌面在洞周围被弯成弧线，`boss h` 不再是一块黑屏 | 抓一次 1920×1080 桌面快照：多 14 MB 常驻、启动多 37 ms；快照是静态的，不跟桌面实时变化 |
+| 封面透明：桌面在洞周围被弯成弧线，`boss blackhole` 不再是一块黑屏 | 抓一次 1920×1080 桌面快照：多 14 MB 常驻、启动多 37 ms；快照是静态的，不跟桌面实时变化 |
 
-被否掉的两条路：留在软件光栅重画 Canvas 版（视觉上限明显低一档，且 `boss h` 在软件后端
+被否掉的两条路：留在软件光栅重画 Canvas 版（视觉上限明显低一档，且 `boss blackhole` 在软件后端
 根本不显示），以及参考仓库那种子进程渲染器（要复制窗口管理、Z 序、退出序列与进程生命周期，
 复杂度最高，而常驻进程那点内存并不是瓶颈）。
 

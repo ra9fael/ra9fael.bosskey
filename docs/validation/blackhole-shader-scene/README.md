@@ -1,6 +1,6 @@
 # 黑洞 Shader 场景实测
 
-`boss h`（`--cover blackhole`）是一个 `ShaderEffect` 场景：逐像素积分史瓦西测地线，
+`boss blackhole`（`--cover blackhole`）是一个 `ShaderEffect` 场景：逐像素积分史瓦西测地线，
 阴影、光子环、盘面上下双弧都是积分结果，不是画出来的。移植与坑位分析见
 [../../blackhole-shader.md](../../blackhole-shader.md)。
 

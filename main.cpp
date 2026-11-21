@@ -31,7 +31,8 @@ Settings readSettings(const winshun::Json& s)
             return v.toString();
         return fallback;
     };
-    st.map = bosskey::parseSceneMap(text("sceneMap", "b=bsod,u=update,t=gcc"));
+    st.map = bosskey::parseSceneMap(text(
+        "sceneMap", "bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole"));
     st.exitSequence = bosskey::normalizeSequence(text("exitSequence", "deadbeef"));
     if (st.exitSequence.empty())
         st.exitSequence = "deadbeef";
@@ -68,28 +69,16 @@ std::string sceneTitle(bool zh, const std::string& scene)
     return scene;
 }
 
-std::string sceneHint(bool zh, const std::string& scene)
-{
-    if (scene == bosskey::kSceneBsod)
-        return tr(zh, "正在收集错误信息，请不要关机", "Collecting error info, do not power off");
-    if (scene == bosskey::kSceneUpdate)
-        return tr(zh, "正在处理更新，请勿关闭电脑", "Working on updates, do not turn off");
-    if (scene == bosskey::kSceneGcc)
-        return tr(zh, "gcc -Wall -O2 持续输出", "gcc -Wall -O2 streaming output");
-    if (scene == bosskey::kSceneMatrix)
-        return tr(zh, "绿色代码流持续滚动", "Green code streams across the screen");
-    if (scene == bosskey::kSceneBlackhole)
-        return tr(zh, "星光被引力透镜弯成弧线", "Starlight lensed into arcs around the hole");
-    return tr(zh, "gcc -Wall -O2 持续输出", "gcc -Wall -O2 streaming output");
-}
-
 winshun::Item makeSceneRow(bool zh,
                            const std::string& token,
                            const std::string& scene,
                            const std::string& exitSequence,
                            int autoHideSec)
 {
-    std::string subtitle = tr(zh, "Enter 全屏伪装 · 键入 ", "Enter to cover · type ")
+    // The trigger leads the row: the list says what to type, not only what the
+    // scene looks like.
+    std::string subtitle = "boss " + token + " · "
+        + tr(zh, "Enter 全屏伪装 · 键入 ", "Enter to cover · type ")
         + exitSequence + tr(zh, " 退出", " to exit");
     if (autoHideSec > 0) {
         const std::string secs = std::to_string(autoHideSec);

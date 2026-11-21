@@ -7,6 +7,10 @@
 #
 # Usage: python tools/verify/shot.py <scene>.png   (run while a --autohide
 # preview is up; the window is found by its fixed title).
+#
+# `--at 0.8,3,8` captures at those wall-clock offsets after the cover appears
+# (one file per offset: <scene>-0.8s.png, <scene>-3.0s.png, ...) — how a scene
+# that unfolds over time is documented frame by frame.
 import ctypes
 import struct
 import sys
@@ -77,18 +81,13 @@ def find_visible_cover():
     return None
 
 
-def main(path):
-    hwnd = find_visible_cover()
-    if not hwnd:
-        print("no visible bosskey cover window", file=sys.stderr)
-        return 1
-    time.sleep(0.6)  # let the first frame settle
+def capture(hwnd, path):
     wr = wintypes.RECT()
     u.GetWindowRect(hwnd, ctypes.byref(wr))
     w, h = wr.right - wr.left, wr.bottom - wr.top
     if w <= 0 or h <= 0:
         print("empty window rect", file=sys.stderr)
-        return 1
+        return False
 
     screen = u.GetDC(None)
     memdc = g.CreateCompatibleDC(screen)
@@ -123,8 +122,34 @@ def main(path):
     g.DeleteDC(memdc)
     u.ReleaseDC(None, screen)
     print(f"captured {w}x{h} -> {path}")
-    return 0
+    return True
+
+
+def main(argv):
+    path = argv[0] if argv else "bosskey_cover.png"
+    offsets = []
+    for i, arg in enumerate(argv):
+        if arg == "--at" and i + 1 < len(argv):
+            offsets = sorted(float(v) for v in argv[i + 1].split(",") if v)
+    hwnd = find_visible_cover()
+    if not hwnd:
+        print("no visible bosskey cover window", file=sys.stderr)
+        return 1
+
+    appeared = time.time()
+    if not offsets:  # let the first frame settle
+        time.sleep(0.6)
+        return 0 if capture(hwnd, path) else 1
+
+    stem = path[:path.rfind(".")] if "." in path else path
+    ok = True
+    for offset in offsets:
+        remaining = offset - (time.time() - appeared)
+        if remaining > 0:
+            time.sleep(remaining)
+        ok = capture(hwnd, f"{stem}-{offset:g}s.png") and ok
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else "bosskey_cover.png"))
+    sys.exit(main(sys.argv[1:]))

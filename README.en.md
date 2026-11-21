@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-Boss incoming? Type `boss b` and the screen instantly turns into a bluescreen. `boss u` is Windows Update, `boss t` is a gcc build in progress, `boss m` is Matrix-style digital rain, and `boss h` is a black hole. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
+Boss incoming? Type `boss bsod` and the screen instantly turns into a bluescreen. `boss update` is Windows Update, `boss gcc` is a gcc build in progress, `boss matrix` is Matrix-style digital rain, and `boss blackhole` is a black hole. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
 
 The result list stays presentable; the fullscreen part does not.
 
@@ -10,20 +10,20 @@ The result list stays presentable; the fullscreen part does not.
 
 | Input | Effect |
 |---|---|
-| `boss ` | lists the five scene rows |
-| `boss b` | fullscreen bluescreen (Win10 style, percent slowly collecting error info) |
-| `boss u` | fullscreen Windows Update (spinner stalled at 87%) |
-| `boss t` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
-| `boss m` | fullscreen Matrix-style digital rain (katakana, Latin letters and Chinese with fading trails) |
-| `boss h` | fullscreen black hole (a transparent lens: the desktop shows through, bent into arcs; a real shadow, a photon ring, the accretion disk) |
+| `boss ` | lists the five scene rows, each showing what to type |
+| `boss bsod` | fullscreen bluescreen (Win10 style, percent slowly collecting error info) |
+| `boss update` | fullscreen Windows Update (spinner stalled at 87%) |
+| `boss gcc` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
+| `boss matrix` | fullscreen Matrix-style digital rain (katakana, digits and Latin letters with fading trails) |
+| `boss blackhole` | fullscreen black hole (a transparent lens: the desktop shows through, bent into arcs; it opens on the plain desktop, then the hole grows in from a point while the disk brightens) |
 
-Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. The top-level keyword also has the Chinese alias `摸鱼`. `boss h` does not hide the desktop: the cover window is transparent, and the desktop shows through, bent into arcs around the hole.
+Press Enter to trigger the fullscreen cover; while covered, every keystroke is swallowed with nothing shown — type the exit key sequence to return. The sub-trigger is the scene's full name (`bsod` / `update` / `gcc` / `matrix` / `blackhole`), and every search result row carries its own trigger; any other word (a single letter, a Chinese word) can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`. `boss blackhole` does not hide the desktop: the cover window is transparent, and the desktop shows through, bent into arcs around the hole.
 
 ## Settings
 
 | Setting | Default | Meaning |
 |---|---|---|
-| Sub-trigger map | `b=bsod,u=update,t=gcc,m=matrix,h=blackhole` | custom tokens, e.g. `a=bsod,s=update,d=gcc`; scenes are bsod / update / gcc / matrix / blackhole |
+| Sub-trigger map | `bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole` | custom triggers, e.g. `黑洞=blackhole` or `b=bsod,h=blackhole`; scenes are bsod / update / gcc / matrix / blackhole |
 | Exit key sequence | `deadbeef` | type it on the cover to exit, case-insensitive; letters and digits only |
 | Auto-dismiss seconds | `0` | 0 = keep the cover until dismissed manually |
 | gcc scene project name | `winshun-core` | the target name shown in the build output |
@@ -64,7 +64,7 @@ The scenes can be checked without WinShun:
 .\bosskey.exe --cover bsod | update | gcc | matrix | blackhole [--all] [--windowed] [--autohide <sec>] --app-dir "<WinShun install dir>"
 ```
 
-`tools/verify/` has `shot.py` (screenshot), `exit.py` (sends the exit sequence and verifies the exit) and `qr_check.py` (decodes the QR matrix with OpenCV) for use with `--autohide`.
+`tools/verify/` has `shot.py` (screenshot; `--at 0.8,3,8` captures one scene at several wall-clock offsets), `exit.py` (sends the exit sequence and verifies the exit) and `qr_check.py` (decodes the QR matrix with OpenCV) for use with `--autohide`.
 
 ## Architecture
 

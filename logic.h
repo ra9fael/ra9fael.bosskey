@@ -49,13 +49,18 @@ inline std::string trim(const std::string& s)
 // ---- settings ---------------------------------------------------------------
 
 struct SceneBinding {
-    std::string token; // what the user types after the keyword, e.g. "b"
+    std::string token; // what the user types after the keyword, e.g. "blackhole"
     std::string scene; // kScene* id
 };
 
-// Parses "b=bsod, u=update, t=gcc" (spaces and ; | newlines as separators
-// too). Invalid pairs are skipped; empty input gives the empty map, and the
-// caller falls back to the defaults.
+// A token is one word typed after the keyword, and the default tokens are the
+// full scene names. The cap keeps a stray paste from turning the query line
+// into a paragraph; it has room for any name in any language.
+constexpr std::size_t kTokenMax = 24;
+
+// Parses "bsod=bsod, update=update, gcc=gcc" (spaces and ; | newlines as
+// separators too). Invalid pairs are skipped; empty input gives the empty map,
+// and the caller falls back to the defaults.
 inline std::vector<SceneBinding> parseSceneMap(const std::string& text)
 {
     std::vector<SceneBinding> out;
@@ -67,9 +72,10 @@ inline std::vector<SceneBinding> parseSceneMap(const std::string& text)
             return;
         const std::string token = lower(trim(item.substr(0, eq)));
         const std::string scene = lower(trim(item.substr(eq + 1)));
-        // One character per token keeps the keyword line readable ("boss b");
-        // longer tokens would fight the query box.
-        if (token.size() != 1 || !std::isalnum(static_cast<unsigned char>(token[0])))
+        // The query's scene word is one whitespace-free word, so a token with a
+        // space inside could never be typed.
+        if (token.empty() || token.size() > kTokenMax
+            || token.find_first_of(" \t\r\n") != std::string::npos)
             return;
         if (!isKnownScene(scene))
             return;
@@ -90,11 +96,16 @@ inline std::vector<SceneBinding> parseSceneMap(const std::string& text)
     return out;
 }
 
-// The default map, used when the user's text parses to nothing.
+// The default map binds each scene's own full name — "boss blackhole", not
+// "boss h" — so nothing has to be decoded from a letter. Anything else (a
+// single letter, a Chinese word) can be bound in settings instead.
 inline std::vector<SceneBinding> defaultSceneMap()
 {
-    return {{"b", kSceneBsod}, {"u", kSceneUpdate}, {"t", kSceneGcc},
-            {"m", kSceneMatrix}, {"h", kSceneBlackhole}};
+    return {{kSceneBsod, kSceneBsod},
+            {kSceneUpdate, kSceneUpdate},
+            {kSceneGcc, kSceneGcc},
+            {kSceneMatrix, kSceneMatrix},
+            {kSceneBlackhole, kSceneBlackhole}};
 }
 
 // The scene for a query's first word; "" when the word is not bound.

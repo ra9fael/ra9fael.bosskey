@@ -2,7 +2,7 @@
 
 [English](README.en.md) | 中文
 
-boss 来了？输入 `boss b`，屏幕瞬间变成蓝屏。`boss u` 是 Windows 更新，`boss t` 是一条正在编译的 gcc，`boss m` 是黑客帝国代码雨，`boss h` 是黑洞吸积盘。键入退出按键序列（默认 `deadbeef`）回来——或者等它自己消失。
+boss 来了？输入 `boss bsod`，屏幕瞬间变成蓝屏。`boss update` 是 Windows 更新，`boss gcc` 是一条正在编译的 gcc，`boss matrix` 是黑客帝国代码雨，`boss blackhole` 是黑洞吸积盘。键入退出按键序列（默认 `deadbeef`）回来——或者等它自己消失。
 
 WinShun 的结果列表里保持体面；全屏的部分不体面。
 
@@ -10,20 +10,20 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 | 输入 | 效果 |
 |---|---|
-| `boss ` | 列出五个场景行 |
-| `boss b` | 全屏蓝屏（Win10 风格，百分比缓慢收集错误信息） |
-| `boss u` | 全屏 Windows 更新（spinner 卡在 87%） |
-| `boss t` | 全屏 gcc 编译（`-Wall -O2`，真实格式的警告，长行换行，永远编译不到 100%） |
-| `boss m` | 全屏黑客帝国代码雨（片假名、拉丁字母与汉字，绿色渐隐轨迹） |
-| `boss h` | 全屏黑洞（透明透镜：桌面透出并被引力透镜扭曲，真实阴影、光子环、吸积盘） |
+| `boss ` | 列出五个场景行，每行都写着该打什么 |
+| `boss bsod` | 全屏蓝屏（Win10 风格，百分比缓慢收集错误信息） |
+| `boss update` | 全屏 Windows 更新（spinner 卡在 87%） |
+| `boss gcc` | 全屏 gcc 编译（`-Wall -O2`，真实格式的警告，长行换行，永远编译不到 100%） |
+| `boss matrix` | 全屏黑客帝国代码雨（片假名、数字与拉丁字母，绿色渐隐轨迹） |
+| `boss blackhole` | 全屏黑洞（透明透镜：桌面透出并被引力透镜扭曲；开场先亮出桌面，黑洞由小长大、吸积盘越来越亮） |
 
-回车触发全屏伪装；伪装期间所有按键都被吞掉、不产生任何显示，键入退出按键序列即返回。顶层关键字支持中文别名 `摸鱼`（`摸鱼 b` 同 `boss b`）。`boss h` 不隐藏桌面：封面窗口是透明的，桌面从洞里绕出来、被弯成弧线显示。
+回车触发全屏伪装；伪装期间所有按键都被吞掉、不产生任何显示，键入退出按键序列即返回。子触发词就是场景全称（`bsod` / `update` / `gcc` / `matrix` / `blackhole`），搜索结果里每一行都带着自己的触发词；想换别的词（单字母、中文词都行）在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。`boss blackhole` 不隐藏桌面：封面窗口是透明的，桌面从洞里绕出来、被弯成弧线显示。
 
 ## 设置
 
 | 设置 | 默认 | 说明 |
 |---|---|---|
-| 子触发词映射 | `b=bsod,u=update,t=gcc,m=matrix,h=blackhole` | 自定义子词，如 `a=bsod,s=update,d=gcc`；场景为 bsod / update / gcc / matrix / blackhole |
+| 子触发词映射 | `bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole` | 自定义触发词，如 `黑洞=blackhole` 或 `b=bsod,h=blackhole`；场景为 bsod / update / gcc / matrix / blackhole |
 | 退出按键序列 | `deadbeef` | 伪装界面下直接键入即退出，不区分大小写；只接受字母和数字 |
 | 自动消失秒数 | `0` | 0 = 一直伪装到手动退出 |
 | gcc 场景项目名 | `winshun-core` | 编译输出显示的目标名 |
@@ -64,7 +64,7 @@ python tools/package.py         # dist/ra9fael.bosskey-0.1.0.wsplugin
 .\bosskey.exe --cover bsod | update | gcc | matrix | blackhole [--all] [--windowed] [--autohide <秒>] --app-dir "<WinShun 安装目录>"
 ```
 
-`tools/verify/` 下的 `shot.py`（截图）、`exit.py`（发送退出序列验证退出）和 `qr_check.py`（用 OpenCV 独立解码二维码矩阵）配合 `--autohide` 使用。
+`tools/verify/` 下的 `shot.py`（截图，`--at 0.8,3,8` 可按时间点连拍同一场景）、`exit.py`（发送退出序列验证退出）和 `qr_check.py`（用 OpenCV 独立解码二维码矩阵）配合 `--autohide` 使用。
 
 ## 架构
 
