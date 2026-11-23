@@ -48,7 +48,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 需要 WinShun **0.22.0 或更新**（插件声明了宿主的共享 Qt 契约 `runtime.qt: "host"`，复用 WinShun 的 Qt 6.12，包内不含 Qt）。两种安装方式：
 
-- 双击 `dist/ra9fael.bosskey-0.1.3.wsplugin`，WinShun 会引导安装；
+- 双击 `dist/ra9fael.bosskey-0.1.4.wsplugin`，WinShun 会引导安装；
 - 或 WinShun 里「插件 → 从归档安装」。
 
 ## 从源码构建
@@ -60,7 +60,7 @@ Windows + MSVC + Ninja + Qt 6（与 WinShun 同源）：
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=<Qt 的 msvc 目录>
 cmake --build build
 ctest --test-dir build          # 纯逻辑单测
-python tools/package.py         # dist/ra9fael.bosskey-0.1.3.wsplugin
+python tools/package.py         # dist/ra9fael.bosskey-0.1.4.wsplugin
 ```
 
 产物：源码目录下的 `bosskey.exe`（无 Qt 启动器）、`BossKeyApp.dll`（QML 伪装窗口）和 `bosskey-guard.exe`（无 Qt、静态 CRT 的可选管理员输入守卫）。

@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-24
+
+### Fixed
+
+- Hide the system pointer while a cover is visible, restore the window's normal cursor on hide, and activate the cover input target as it becomes visible so typing the exit sequence works without an initial click.
+- Verify the pointer, startup foreground and no-click focused exit in the 480×270 windowed acceptance path.
+
 ## [0.1.3] - 2026-11-21
 
 ### Added

@@ -28,6 +28,13 @@ u.SetForegroundWindow.argtypes = [wintypes.HWND]
 u.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
 u.GetAncestor.restype = wintypes.HWND
 u.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+u.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
+u.SetCursorPos.argtypes = [ctypes.c_int, ctypes.c_int]
+u.SetCursorPos.restype = wintypes.BOOL
+u.GetCursorInfo.argtypes = [ctypes.c_void_p]
+u.GetCursorInfo.restype = wintypes.BOOL
+u.LoadCursorW.argtypes = [wintypes.HINSTANCE, ctypes.c_void_p]
+u.LoadCursorW.restype = wintypes.HANDLE
 
 
 def chord(*keys):
@@ -80,6 +87,27 @@ def focus_cover(cover):
         finally:
             u.SetCursorPos(point.x, point.y)
     assert u.GetForegroundWindow() == cover, "cover is not foreground"
+
+
+def cover_cursor_is_hidden(cover):
+    class CursorInfo(ctypes.Structure):
+        _fields_ = [("size", wintypes.DWORD), ("flags", wintypes.DWORD),
+                    ("cursor", wintypes.HANDLE), ("position", wintypes.POINT)]
+
+    previous = wintypes.POINT()
+    assert u.GetCursorPos(ctypes.byref(previous)), "GetCursorPos failed"
+    rect = wintypes.RECT()
+    assert u.GetWindowRect(cover, ctypes.byref(rect)), "GetWindowRect failed"
+    try:
+        assert u.SetCursorPos((rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2), "SetCursorPos failed"
+        time.sleep(0.1)
+        info = CursorInfo()
+        info.size = ctypes.sizeof(info)
+        assert u.GetCursorInfo(ctypes.byref(info)), "GetCursorInfo failed"
+        arrow = u.LoadCursorW(None, ctypes.c_void_p(32512))
+        return bool(info.flags & 1) and info.cursor != arrow
+    finally:
+        u.SetCursorPos(previous.x, previous.y)
 
 
 def visible_dialogs():
@@ -152,7 +180,17 @@ def main():
     result = {"cover_rect": desktop.require_windowed(cover),
               "cover_integrity": desktop.integrity(desktop.window_pid(cover)), "shortcuts": []}
     time.sleep(0.5)
-    focus_cover(cover)
+    result["cursor_hidden"] = cover_cursor_is_hidden(cover)
+    assert result["cursor_hidden"], "cover still shows the system arrow cursor"
+    if args.focused_exit:
+        result["startup_foreground"] = u.GetForegroundWindow() == cover
+        assert result["startup_foreground"], "cover did not take focus without a click"
+        send_sequence()
+        result["focused_exit_without_click"] = wait_hidden()
+        assert result["focused_exit_without_click"], "focused QML cover required a click before accepting keys"
+        accepted = result["focused_exit_without_click"]
+    else:
+        focus_cover(cover)
     shortcuts = [
         ("Ctrl+Shift+Esc", (0xA2, 0xA0, 0x1B)),
         ("Shift+F10", (0xA0, 0x79)),
@@ -168,11 +206,7 @@ def main():
         ok = u.GetForegroundWindow() == cover and not taskbar_above(cover)
         result["shortcuts"].append({"name": name, "passed": ok})
         assert ok, name
-    if args.focused_exit:
-        send_sequence()
-        result["focused_exit"] = wait_hidden()
-        accepted = result["focused_exit"]
-    else:
+    if not args.focused_exit:
         env = dict(os.environ, PYTHONHOME=sys.base_prefix)
         target = subprocess.Popen([str(args.target_python), __file__, "--target"], text=True, env=env,
                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8")

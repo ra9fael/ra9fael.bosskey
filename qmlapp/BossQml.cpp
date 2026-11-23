@@ -143,12 +143,14 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
         const QRect shown = spec.windowed
             ? QRect(geometry.x(), geometry.y(), 480, 270) : geometry;
         window->setGeometry(shown);
+        window->setCursor(Qt::BlankCursor);
         if (spec.windowed) {
             window->show();
         } else {
             window->showFullScreen();
         }
         ws::win::bringToFront(window); // a user gesture just happened: take the focus
+        window->requestActivate();
         covered.push_back(screen);
     }
     if (covered.isEmpty()) {
@@ -214,8 +216,10 @@ void guiHide()
         g_guard->stop();
     if (g_input)
         g_input->stop();
-    for (QQuickWindow* window : g_windows)
+    for (QQuickWindow* window : g_windows) {
+        window->unsetCursor();
         window->hide();
+    }
     if (g_controller)
         g_controller->stopCover();
 }

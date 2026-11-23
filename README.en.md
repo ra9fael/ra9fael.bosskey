@@ -48,7 +48,7 @@ The covers render through D3D11 — the black hole scene is a fragment shader th
 
 Requires **WinShun 0.22.0 or later** (the plugin declares the host's shared-Qt contract, `runtime.qt: "host"`, and reuses WinShun's Qt 6.12; no Qt is bundled). Either way:
 
-- double-click `dist/ra9fael.bosskey-0.1.3.wsplugin` and WinShun walks you through it;
+- double-click `dist/ra9fael.bosskey-0.1.4.wsplugin` and WinShun walks you through it;
 - or in WinShun: Plugins → Install from archive.
 
 ## Building from source
@@ -60,7 +60,7 @@ Windows + MSVC + Ninja + Qt 6 (the same source WinShun uses):
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=<Qt's msvc dir>
 cmake --build build
 ctest --test-dir build          # pure-logic tests
-python tools/package.py         # dist/ra9fael.bosskey-0.1.3.wsplugin
+python tools/package.py         # dist/ra9fael.bosskey-0.1.4.wsplugin
 ```
 
 Outputs: `bosskey.exe` (a Qt-less starter), `BossKeyApp.dll` (the QML cover), and `bosskey-guard.exe` (the optional elevated input guard, without Qt and with a static CRT).

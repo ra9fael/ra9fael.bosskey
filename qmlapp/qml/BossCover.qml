@@ -57,6 +57,7 @@ Window {
     // item on top of the scene takes the focus and feeds the matcher. Nothing
     // shows, whatever the boss sees you type.
     Item {
+        id: inputTarget
         anchors.fill: parent
         focus: true
         Keys.onPressed: (event) => {
@@ -64,5 +65,17 @@ Window {
                 event.accepted = true
         }
         Component.onCompleted: forceActiveFocus()
+    }
+
+    // The windows are precreated hidden, so the initial focus request happens
+    // before the window can become active. Restore it on every real show and
+    // activation instead of requiring a click before QML receives keys.
+    onVisibleChanged: {
+        if (visible)
+            inputTarget.forceActiveFocus()
+    }
+    onActiveChanged: {
+        if (active)
+            inputTarget.forceActiveFocus()
     }
 }
