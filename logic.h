@@ -54,9 +54,9 @@ struct SceneBinding {
     std::string scene; // kScene* id
 };
 
-// A token is one word typed after the keyword, and the default tokens are the
-// full scene names. The cap keeps a stray paste from turning the query line
-// into a paragraph; it has room for any name in any language.
+// A token is one word typed after the keyword. The default map uses a short
+// English abbreviation and pinyin initials for each scene. The cap keeps a
+// stray paste from turning the query line into a paragraph.
 constexpr std::size_t kTokenMax = 24;
 
 // Parses "bsod=bsod, update=update, gcc=gcc" (spaces and ; | newlines as
@@ -97,20 +97,17 @@ inline std::vector<SceneBinding> parseSceneMap(const std::string& text)
     return out;
 }
 
-// The default map binds each scene's own name plus the Mandarin full pinyin and
-// the pinyin initials, so `boss blackhole`, `boss heidong` and `boss hd` all
-// reach the same scene: nothing has to be decoded from a letter, and nothing has
-// to be spelled out either. Anything else can still be bound in settings.
+// The default map binds an English abbreviation and pinyin initials, so the
+// trigger stays short: `boss bh` / `boss hd` reaches the black-hole scene.
+// Custom settings can still bind additional words when needed.
 inline std::vector<SceneBinding> defaultSceneMap()
 {
-    return {{kSceneBsod, kSceneBsod}, {"lanping", kSceneBsod}, {"lp", kSceneBsod},
-            {kSceneUpdate, kSceneUpdate}, {"gengxin", kSceneUpdate}, {"gx", kSceneUpdate},
-            {kSceneGcc, kSceneGcc}, {"bianyi", kSceneGcc}, {"by", kSceneGcc},
-            {kSceneMatrix, kSceneMatrix}, {"daimayu", kSceneMatrix}, {"dmy", kSceneMatrix},
-            {kSceneBlackhole, kSceneBlackhole}, {"heidong", kSceneBlackhole},
-            {"hd", kSceneBlackhole},
-            {kSceneAquarium, kSceneAquarium}, {"shuizuguan", kSceneAquarium},
-            {"szg", kSceneAquarium}};
+    return {{"bsod", kSceneBsod}, {"lp", kSceneBsod},
+            {"wu", kSceneUpdate}, {"gx", kSceneUpdate},
+            {"gcc", kSceneGcc}, {"by", kSceneGcc},
+            {"mr", kSceneMatrix}, {"dmy", kSceneMatrix},
+            {"bh", kSceneBlackhole}, {"hd", kSceneBlackhole},
+            {"aq", kSceneAquarium}, {"szg", kSceneAquarium}};
 }
 
 // The map the plugin saved before the aquarium scene existed. It is kept as
@@ -119,6 +116,15 @@ inline const char* legacySceneMap() { return "bsod=bsod,lanping=bsod,lp=bsod,upd
     "gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,"
     "dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole"; }
 
+// The full-name default shipped after the aquarium scene was added. Treat it
+// like the older default so an untouched setting receives the short aliases.
+inline const char* previousDefaultSceneMap() {
+    return "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,"
+        "gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,"
+        "blackhole=blackhole,heidong=blackhole,hd=blackhole,aquarium=aquarium,"
+        "shuizuguan=aquarium,szg=aquarium";
+}
+
 // The map a saved `sceneMap` setting stands for: unset or blank is the default
 // map (one search word never goes silent); the pre-aquarium default is the old
 // default, not a custom map, so it upgrades instead of hiding the new scene;
@@ -126,7 +132,7 @@ inline const char* legacySceneMap() { return "bsod=bsod,lanping=bsod,lp=bsod,upd
 inline std::vector<SceneBinding> parseSceneMapSetting(const std::string& text)
 {
     const std::string value = trim(text);
-    if (value.empty() || value == legacySceneMap())
+    if (value.empty() || value == legacySceneMap() || value == previousDefaultSceneMap())
         return defaultSceneMap();
     return parseSceneMap(value);
 }

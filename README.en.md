@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-Boss incoming? Type `boss bsod` to open a bluescreen after the consent step. `boss update` is Windows Update, `boss gcc` is a gcc build in progress, `boss matrix` is Matrix-style digital rain, and `boss blackhole` is a black hole. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
+Boss incoming? Type `boss bsod` to open a bluescreen after the consent step. `boss wu` is Windows Update, `boss gcc` is a gcc build in progress, `boss mr` is Matrix-style digital rain, and `boss bh` is a black hole. Type the exit key sequence (default `deadbeef`) to come back — or let it dismiss itself.
 
 The result list stays presentable; the fullscreen part does not.
 
@@ -11,13 +11,14 @@ The result list stays presentable; the fullscreen part does not.
 | Input | Effect |
 |---|---|
 | `boss ` | lists the five scene rows, each showing the words that trigger it |
-| `boss bsod` / `lanping` / `lp` | fullscreen bluescreen (Win10 style, percent slowly collecting error info) |
-| `boss update` / `gengxin` / `gx` | fullscreen Windows Update (spinner stalled at 87%) |
-| `boss gcc` / `bianyi` / `by` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
-| `boss matrix` / `daimayu` / `dmy` | fullscreen Matrix-style digital rain (katakana, digits and Latin letters with fading trails) |
-| `boss blackhole` / `heidong` / `hd` | fullscreen black hole (an opaque star field bent into arcs; the disk spreads before the hole grows, then the hole wanders) |
+| `boss bsod` / `lp` | fullscreen bluescreen (Win10 style, percent slowly collecting error info) |
+| `boss wu` / `gx` | fullscreen Windows Update (spinner stalled at 87%) |
+| `boss gcc` / `by` | fullscreen gcc build (`-Wall -O2`, real-format warnings, wrapped long lines, never reaching 100%) |
+| `boss mr` / `dmy` | fullscreen Matrix-style digital rain (katakana, digits and Latin letters with fading trails) |
+| `boss bh` / `hd` | fullscreen black hole (an opaque star field bent into arcs; the disk spreads before the hole grows, then the hole wanders) |
+| `boss aq` / `szg` | fullscreen ASCII aquarium |
 
-Press Enter to start the cover; with "Request UAC input protection" enabled it asks for consent once and accepting selects enhanced protection, while leaving it off or declining selects ordinary mode. Type the exit key sequence to return. Each scene answers to three words: its English name, the full Mandarin pinyin and the pinyin initials (`boss hd` = `boss heidong` = `boss blackhole`), and every search result row lists them; any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
+Press Enter to start the cover; with "Request UAC input protection" enabled it asks for consent once and accepting selects enhanced protection, while leaving it off or declining selects ordinary mode. Type the exit key sequence to return. Defaults use an English abbreviation and pinyin initials (`boss bh` = `boss hd`); any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
 
 `boss blackhole` paints an opaque procedural star field. It neither captures the desktop nor minimizes other windows. The lens bends the stars around a pure-black shadow.
 
@@ -25,7 +26,7 @@ Press Enter to start the cover; with "Request UAC input protection" enabled it a
 
 | Setting | Default | Meaning |
 |---|---|---|
-| Sub-trigger map | `bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole` | one scene can answer to several words (name, full pinyin, initials); scenes are bsod / update / gcc / matrix / blackhole |
+| Sub-trigger map | `bsod=bsod,lp=bsod,wu=update,gx=update,gcc=gcc,by=gcc,mr=matrix,dmy=matrix,bh=blackhole,hd=blackhole,aq=aquarium,szg=aquarium` | defaults use English abbreviations and pinyin initials; custom settings can add other words |
 | Exit key sequence | `deadbeef` | type it on the cover to exit, case-insensitive; letters and digits only |
 | Auto-dismiss seconds | `0` | 0 = keep the cover until dismissed manually |
 | gcc scene project name | `winshun-core` | the target name shown in the build output |

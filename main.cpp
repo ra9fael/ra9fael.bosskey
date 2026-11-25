@@ -156,8 +156,8 @@ class BossKeyPlugin final : public winshun::Plugin {
             }
             winshun::Item hint("unknown", tr(zh, "未知场景：", "Unknown scene: ") + word,
                                tr(zh, "可用子词：", "Available tokens: ") + known
-                                   + tr(zh, "（全拼、缩写也行；插件设置里可改）",
-                                        " (full pinyin and initials work too; configurable in settings)"));
+                                   + tr(zh, "（默认用英文缩写和拼音首字母；插件设置里可改）",
+                                        " (defaults use English abbreviations and pinyin initials; configurable in settings)"));
             hint.withIcon("color:#E8A33D");
             hint.withScore(50);
             return {hint};

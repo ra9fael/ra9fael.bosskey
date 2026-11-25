@@ -36,10 +36,10 @@
         "en": "Sub-trigger map"
       },
       "hint": {
-        "zh": "逗号分隔的 触发词=场景，场景为 bsod/update/gcc/matrix/blackhole/aquarium。一个场景可以绑定多个词（英文名、全拼、缩写，如 heidong=blackhole,hd=blackhole）",
-        "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc/matrix/blackhole/aquarium. A scene can answer to several words (its name, full pinyin, initials — e.g. heidong=blackhole,hd=blackhole)"
+        "zh": "逗号分隔的 触发词=场景，默认只用英文缩写和拼音首字母：bsod/lp、wu/gx、gcc/by、mr/dmy、bh/hd、aq/szg；自定义设置可增加词",
+        "en": "Comma-separated token=scene pairs; defaults use English abbreviations and pinyin initials: bsod/lp, wu/gx, gcc/by, mr/dmy, bh/hd, aq/szg; custom settings may add words"
       },
-      "default": "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole,aquarium=aquarium,shuizuguan=aquarium,szg=aquarium"
+      "default": "bsod=bsod,lp=bsod,wu=update,gx=update,gcc=gcc,by=gcc,mr=matrix,dmy=matrix,bh=blackhole,hd=blackhole,aq=aquarium,szg=aquarium"
     },
     {
       "key": "exitSequence",
@@ -163,8 +163,8 @@
       },
       "icon": "glyph:U+ED1A",
       "hint": {
-        "zh": "bsod/lanping/lp 蓝屏 · update/gengxin/gx 系统更新 · gcc/bianyi/by gcc 编译 · matrix/daimayu/dmy 代码雨 · blackhole/heidong/hd 黑洞 · aquarium/shuizuguan/szg 水族馆；Enter 全屏伪装，输入退出序列返回",
-        "en": "bsod/lanping/lp bluescreen · update/gengxin/gx Windows Update · gcc/bianyi/by build · matrix/daimayu/dmy Matrix rain · blackhole/heidong/hd black hole · aquarium/shuizuguan/szg ASCII aquarium; Enter covers the screen, type the exit sequence to return"
+        "zh": "bsod/lp 蓝屏 · wu/gx 系统更新 · gcc/by gcc 编译 · mr/dmy 代码雨 · bh/hd 黑洞 · aq/szg 水族馆；Enter 全屏伪装，输入退出序列返回",
+        "en": "bsod/lp bluescreen · wu/gx Windows Update · gcc/by build · mr/dmy Matrix rain · bh/hd black hole · aq/szg ASCII aquarium; Enter covers the screen, type the exit sequence to return"
       },
       "actions": [
         {

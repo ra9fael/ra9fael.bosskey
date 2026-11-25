@@ -2,7 +2,7 @@
 
 [English](README.en.md) | 中文
 
-boss 来了？输入 `boss bsod`，授权后屏幕变成蓝屏。`boss update` 是 Windows 更新，`boss gcc` 是一条正在编译的 gcc，`boss matrix` 是黑客帝国代码雨，`boss blackhole` 是黑洞吸积盘。键入退出按键序列（默认 `deadbeef`）回来——或者等它自己消失。
+boss 来了？输入 `boss bsod`，授权后屏幕变成蓝屏。`boss wu` 是 Windows 更新，`boss gcc` 是一条正在编译的 gcc，`boss mr` 是黑客帝国代码雨，`boss bh` 是黑洞吸积盘。键入退出按键序列（默认 `deadbeef`）回来——或者等它自己消失。
 
 WinShun 的结果列表里保持体面；全屏的部分不体面。
 
@@ -11,13 +11,14 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 | 输入 | 效果 |
 |---|---|
 | `boss ` | 列出五个场景行，每行都写着能触发它的词 |
-| `boss bsod` / `lanping` / `lp` | 全屏蓝屏（Win10 风格，百分比缓慢收集错误信息） |
-| `boss update` / `gengxin` / `gx` | 全屏 Windows 更新（spinner 卡在 87%） |
-| `boss gcc` / `bianyi` / `by` | 全屏 gcc 编译（`-Wall -O2`，真实格式的警告，长行换行，永远编译不到 100%） |
-| `boss matrix` / `daimayu` / `dmy` | 全屏黑客帝国代码雨（片假名、数字与拉丁字母，绿色渐隐轨迹） |
-| `boss blackhole` / `heidong` / `hd` | 全屏黑洞（不透明星空被引力透镜扭曲；吸积盘先铺开、黑洞随后长大，之后随机游走） |
+| `boss bsod` / `lp` | 全屏蓝屏（Win10 风格，百分比缓慢收集错误信息） |
+| `boss wu` / `gx` | 全屏 Windows 更新（spinner 卡在 87%） |
+| `boss gcc` / `by` | 全屏 gcc 编译（`-Wall -O2`，真实格式的警告，长行换行，永远编译不到 100%） |
+| `boss mr` / `dmy` | 全屏黑客帝国代码雨（片假名、数字与拉丁字母，绿色渐隐轨迹） |
+| `boss bh` / `hd` | 全屏黑洞（不透明星空被引力透镜扭曲；吸积盘先铺开、黑洞随后长大，之后随机游走） |
+| `boss aq` / `szg` | 全屏 ASCII 水族馆 |
 
-回车启动伪装；设置里打开“请求 UAC 增强输入防护”后，每次先请求一次 UAC，允许则启用增强防护，关闭或拒绝则使用普通模式。键入退出按键序列即返回。每个场景认三个词：英文全称、中文全拼、拼音首字母（`boss hd` 等于 `boss heidong` 等于 `boss blackhole`），搜索结果里每一行都列着这三个词；想换别的词在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 blackhole` 同 `boss blackhole`）。
+回车启动伪装；设置里打开“请求 UAC 增强输入防护”后，每次先请求一次 UAC，允许则启用增强防护，关闭或拒绝则使用普通模式。默认触发词只保留英文缩写和拼音首字母（`boss bh` 等于 `boss hd`），搜索结果里每一行都列着这两个词；想增加其他词可在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 bh` 同 `boss bh`）。
 
 `boss blackhole` 绘制不透明的程序化星空，不采集桌面、不最小化其他窗口。引力透镜弯曲星空，黑洞阴影保持纯黑。
 
@@ -25,7 +26,7 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 
 | 设置 | 默认 | 说明 |
 |---|---|---|
-| 子触发词映射 | `bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole` | 一个场景可以绑多个词（英文名、全拼、缩写）；场景为 bsod / update / gcc / matrix / blackhole |
+| 子触发词映射 | `bsod=bsod,lp=bsod,wu=update,gx=update,gcc=gcc,by=gcc,mr=matrix,dmy=matrix,bh=blackhole,hd=blackhole,aq=aquarium,szg=aquarium` | 默认只用英文缩写和拼音首字母；自定义设置可增加其他词 |
 | 退出按键序列 | `deadbeef` | 伪装界面下直接键入即退出，不区分大小写；只接受字母和数字 |
 | 自动消失秒数 | `0` | 0 = 一直伪装到手动退出 |
 | gcc 场景项目名 | `winshun-core` | 编译输出显示的目标名 |

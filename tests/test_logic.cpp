@@ -65,28 +65,25 @@ void testSceneMap()
     expect(bosskey::parseSceneMap("").empty(), "map: empty text");
     expect(bosskey::parseSceneMap("nothing here").empty(), "map: no pairs");
 
-    // The default map binds three words per scene: its name, the full pinyin and
-    // the pinyin initials.
+    // The default map binds an English abbreviation and pinyin initials.
     const auto def = bosskey::defaultSceneMap();
-    expect(def.size() == 18, "default map: three words per scene");
+    expect(def.size() == 12, "default map: two short words per scene");
     expectEq(bosskey::resolveScene(def, "bsod"), bosskey::kSceneBsod, "resolve: bsod");
-    expectEq(bosskey::resolveScene(def, "lanping"), bosskey::kSceneBsod, "resolve: full pinyin");
     expectEq(bosskey::resolveScene(def, "lp"), bosskey::kSceneBsod, "resolve: pinyin initials");
-    expectEq(bosskey::resolveScene(def, "UPDATE"), bosskey::kSceneUpdate,
-             "resolve: case-folded name");
-    expectEq(bosskey::resolveScene(def, "gengxin"), bosskey::kSceneUpdate, "resolve: gx pinyin");
-    expectEq(bosskey::resolveScene(def, "daimayu"), bosskey::kSceneMatrix, "resolve: dmy pinyin");
-    expectEq(bosskey::resolveScene(def, "blackhole"), bosskey::kSceneBlackhole,
-             "resolve: blackhole");
-    expectEq(bosskey::resolveScene(def, "heidong"), bosskey::kSceneBlackhole,
-             "resolve: heidong");
+    expectEq(bosskey::resolveScene(def, "wu"), bosskey::kSceneUpdate, "resolve: Windows Update");
+    expectEq(bosskey::resolveScene(def, "gx"), bosskey::kSceneUpdate, "resolve: gx pinyin");
+    expectEq(bosskey::resolveScene(def, "mr"), bosskey::kSceneMatrix, "resolve: Matrix rain");
+    expectEq(bosskey::resolveScene(def, "dmy"), bosskey::kSceneMatrix, "resolve: dmy pinyin");
+    expectEq(bosskey::resolveScene(def, "bh"), bosskey::kSceneBlackhole,
+             "resolve: black-hole abbreviation");
     expectEq(bosskey::resolveScene(def, "hd"), bosskey::kSceneBlackhole, "resolve: hd");
-    expectEq(bosskey::resolveScene(def, "aquarium"), bosskey::kSceneAquarium,
-             "resolve: aquarium");
-    expectEq(bosskey::resolveScene(def, "shuizuguan"), bosskey::kSceneAquarium,
-             "resolve: the aquarium's full pinyin");
+    expectEq(bosskey::resolveScene(def, "aq"), bosskey::kSceneAquarium,
+             "resolve: aquarium abbreviation");
     expectEq(bosskey::resolveScene(def, "szg"), bosskey::kSceneAquarium,
              "resolve: the aquarium's initials");
+    expectEq(bosskey::resolveScene(def, "update"), "", "resolve: full English name refused");
+    expectEq(bosskey::resolveScene(def, "gengxin"), "", "resolve: full pinyin refused");
+    expectEq(bosskey::resolveScene(def, "blackhole"), "", "resolve: full English name refused");
     expect(bosskey::isKnownScene(bosskey::kSceneMatrix), "scene: matrix is known");
     expect(bosskey::isKnownScene(bosskey::kSceneBlackhole), "scene: blackhole is known");
     expect(bosskey::isKnownScene(bosskey::kSceneAquarium), "scene: aquarium is known");
@@ -108,14 +105,13 @@ void testSceneMap()
     expectEq(canonical[4].scene, bosskey::kSceneBlackhole, "canonical: blackhole fifth");
     expectEq(canonical[5].scene, bosskey::kSceneAquarium, "canonical: aquarium last");
     const auto holes = bosskey::tokensForScene(def, bosskey::kSceneBlackhole);
-    expect(holes.size() == 3, "tokens: three words for blackhole");
-    expectEq(holes[0], "blackhole", "tokens: the name comes first");
-    expectEq(holes[1], "heidong", "tokens: then the full pinyin");
-    expectEq(holes[2], "hd", "tokens: then the initials");
-    expect(bosskey::tokensForScene(def, "update").size() == 3, "tokens: update has three");
+    expect(holes.size() == 2, "tokens: two short words for blackhole");
+    expectEq(holes[0], "bh", "tokens: the English abbreviation comes first");
+    expectEq(holes[1], "hd", "tokens: then the initials");
+    expect(bosskey::tokensForScene(def, "update").size() == 2, "tokens: update has two");
     const auto tank = bosskey::tokensForScene(def, bosskey::kSceneAquarium);
-    expect(tank.size() == 3 && tank[0] == "aquarium" && tank[2] == "szg",
-           "tokens: aquarium has its three words");
+    expect(tank.size() == 2 && tank[0] == "aq" && tank[1] == "szg",
+           "tokens: aquarium has short aliases");
 }
 
 // ---- the saved scene map: the pre-aquarium default upgrades ------------------
@@ -125,7 +121,7 @@ void testSceneMapSetting()
     // What 0.1.4 wrote for every install that never touched the setting, word
     // for word, with the text this build reads that as the old default by.
     const auto previous = bosskey::parseSceneMapSetting("");
-    expect(previous.size() == 18, "setting: unset is the default map");
+    expect(previous.size() == 12, "setting: unset is the default map");
     expectEq(bosskey::legacySceneMap(),
              "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,"
              "gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,"
@@ -136,6 +132,9 @@ void testSceneMapSetting()
              "setting: the old default gains the aquarium scene");
     expect(upgraded.size() == bosskey::defaultSceneMap().size(),
            "setting: the upgrade is exactly the current default");
+    const auto previousDefault = bosskey::parseSceneMapSetting(bosskey::previousDefaultSceneMap());
+    expect(previousDefault.size() == bosskey::defaultSceneMap().size(),
+           "setting: the full-name default upgrades to short aliases");
 
     // A map the user wrote stays theirs, aquarium or not.
     const auto custom = bosskey::parseSceneMapSetting("b=bsod,h=blackhole");
@@ -144,7 +143,7 @@ void testSceneMapSetting()
     expectEq(bosskey::resolveScene(custom, "b"), bosskey::kSceneBsod, "setting: its own words work");
 
     // A blank setting is the default too: one search word is never silent.
-    expect(bosskey::parseSceneMapSetting("  \n ").size() == 18, "setting: blank is the default");
+    expect(bosskey::parseSceneMapSetting("  \n ").size() == 12, "setting: blank is the default");
 }
 
 // ---- the aquarium: its bounds and the pace of its clock ----------------------
