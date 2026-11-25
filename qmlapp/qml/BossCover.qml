@@ -69,19 +69,21 @@ Window {
     }
 
     // Keys cannot attach to a Window root ("is not an Item"), so a transparent
-    // item on top of the scene takes the focus and feeds the matcher. Aquarium
-    // Tab is routed to the native layout cycler when multi-screen mode is on.
+    // item on top of the scene takes the focus and feeds the matcher.
     Item {
         id: inputTarget
         anchors.fill: parent
         focus: true
         Keys.onPressed: (event) => {
-            if (root.cover.scene === "aquarium" && event.key === Qt.Key_Tab) {
+            if (root.cover.scene === "aquarium"
+                    && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab)) {
                 if (!event.isAutoRepeat && sceneLoader.status === Loader.Ready && sceneLoader.item) {
-                    if (root.aquariumCanCycleLayout)
-                        root.cover.cycleAquariumLayout(event.modifiers & Qt.ShiftModifier ? -1 : 1)
+                    const reverse = event.key === Qt.Key_Backtab
+                            || (event.modifiers & Qt.ShiftModifier) !== 0
+                    if (root.aquariumCanCycleLayout && (event.modifiers & Qt.ControlModifier))
+                        root.cover.cycleAquariumLayout(reverse ? -1 : 1)
                     else
-                        sceneLoader.item.cycleEffect()
+                        sceneLoader.item.cycleEffect(reverse ? -1 : 1)
                 }
                 event.accepted = true
                 return

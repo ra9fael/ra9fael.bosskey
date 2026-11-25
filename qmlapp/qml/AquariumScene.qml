@@ -22,8 +22,8 @@ Rectangle {
     property int spanMonitorCount: 1
 
     // ---- the world ----------------------------------------------------------
-    readonly property int worldW: spanScreens ? Math.max(320, Math.ceil(width / p)) : 320
-    readonly property int worldH: spanScreens ? Math.max(240, Math.ceil(height / p)) : 240 // SCREEN_H
+    readonly property int worldW: Math.max(320, Math.ceil(width / p))
+    readonly property int worldH: Math.max(240, Math.ceil(height / p)) // SCREEN_H
     readonly property int seaLevelY: worldH - 36 // SEA_LEVEL_Y
     readonly property int tickMs: 50            // the firmware's 20 fps
 
@@ -44,10 +44,9 @@ Rectangle {
 
     // ---- the screen ---------------------------------------------------------
     //
-    // Scale until the 4:3 tank covers both dimensions. Fractional scaling is
-    // intentional here: full-screen windows are not restricted to integer LCD
-    // pixels, and cropping the long dimension avoids a black strip at the side.
-    readonly property real p: spanScreens ? spanScale : Math.max(width / worldW, height / worldH)
+    // Fit the original 4:3 tank to the short dimension, then extend the world
+    // along the long dimension so the full screen is used without cropping.
+    readonly property real p: spanScreens ? spanScale : Math.min(width / 320, height / 240)
     readonly property real boardW: worldW * p
     readonly property real boardH: worldH * p
     readonly property int cols: 1
@@ -55,12 +54,14 @@ Rectangle {
     readonly property int originX: Math.floor((width - boardW) / 2)
     readonly property int originY: Math.floor((height - boardH) / 2)
 
-    // Single-screen Tab cycles through the aquarium overlays. In a multi-screen
-    // --all cover, BossCover routes Tab to the native layout cycler instead.
-    property int effectMode: 0
+    // Tab cycles hidden/title style and position presets; Ctrl+Tab changes layout.
+    property int titleMode: 0
+    readonly property int titleStyleCount: 4
+    readonly property int titlePositionCount: 3
+    readonly property int titleModeCount: 1 + titleStyleCount * titlePositionCount
 
-    function cycleEffect() {
-        effectMode = (effectMode + 1) % 3
+    function cycleEffect(direction) {
+        titleMode = (titleMode + (direction < 0 ? titleModeCount - 1 : 1)) % titleModeCount
         paint()
     }
 
@@ -787,72 +788,67 @@ Rectangle {
         drawSeahorse(ctx, k, ox, oy, u)
         drawSnail(ctx, k, ox, oy, u)
         drawJellyfish(ctx, k, ox, oy, u)
-        drawEffect(ctx, k, ox, oy, u)
-        if (effectMode === 2)
-            drawClock(ctx, ox, oy, u)
-    }
-
-    function drawEffect(ctx, k, ox, oy, u) {
-        if (effectMode === 1)
+        if (titleMode > 0)
             drawNeonTitle(ctx, k, ox, oy, u)
     }
 
-    // The source is a 320x240 title frame. Only its title band is drawn so the
-    // transparent canvas margins cannot make the effect dominate the tank.
     function drawNeonTitle(ctx, k, ox, oy, u) {
-        if (titleImage.status !== Image.Ready)
-            return
-        const sourceX = 10
-        const sourceY = 67
-        const sourceW = 310
-        const sourceH = 111
-        const titleW = 160
-        const titleH = 57
-        const titleX = (worldW - titleW) * 0.5
-        const titleY = 34
+        const preset = titleMode - 1
+        const style = Math.floor(preset / titlePositionCount)
+        const position = preset % titlePositionCount
+        const titleH = style === 0 ? 57 : 20
+        const titleY = position === 0 ? 24
+                      : position === 1 ? Math.floor((worldH - titleH) * 0.5)
+                      : worldH - titleH - 24
         const pulse = 0.78 + 0.12 * Math.sin(k.t * 2.1)
 
-        ctx.save()
-        ctx.globalAlpha = pulse
-        ctx.drawImage(titleImage, sourceX, sourceY, sourceW, sourceH,
-                       ox + titleX * u, oy + titleY * u, titleW * u, titleH * u)
-        ctx.restore()
-    }
-
-    function twoDigits(value) {
-        return value < 10 ? "0" + value : String(value)
-    }
-
-    function drawClock(ctx, ox, oy, u) {
-        const now = new Date()
-        const time = twoDigits(now.getHours()) + ":" + twoDigits(now.getMinutes())
-                    + ":" + twoDigits(now.getSeconds())
-        const rows = 5
-        const gap = 1
-        let columns = 0
-        for (let i = 0; i < time.length; ++i)
-            columns += Tank.asciiClockWidth(time.charAt(i)) + (i ? gap : 0)
-        const startX = Math.max(0, Math.floor((worldW - columns * 6) * 0.5))
-        const startY = 82
-        const shadow = Tank.css565(Tank.rgb565(0, 4, 22))
-        const color = Tank.css565(Tank.rgb565(0, 20, 95))
-
-        for (let row = 0; row < rows; ++row) {
-            let x = startX
-            for (let i = 0; i < time.length; ++i) {
-                const glyph = Tank.asciiClockGlyphs[time.charAt(i)] || Tank.asciiClockGlyphs[" "]
-                const line = glyph[row] || ""
-                for (let col = 0; col < line.length; ++col) {
-                    if (line.charAt(col) !== " ") {
-                        glyphAt(ctx, x + col * 6 + 1, startY + row * 10 + 1,
-                                line.charAt(col), u, ox, oy, shadow)
-                        glyphAt(ctx, x + col * 6, startY + row * 10,
-                                line.charAt(col), u, ox, oy, color)
-                    }
-                }
-                x += (Tank.asciiClockWidth(time.charAt(i)) + gap) * 6
-            }
+        if (style === 0) {
+            if (titleImage.status !== Image.Ready)
+                return
+            const sourceX = 10
+            const sourceY = 67
+            const sourceW = 310
+            const sourceH = 111
+            const titleW = 160
+            const titleX = (worldW - titleW) * 0.5
+            ctx.save()
+            ctx.globalAlpha = pulse
+            ctx.drawImage(titleImage, sourceX, sourceY, sourceW, sourceH,
+                           ox + titleX * u, oy + titleY * u, titleW * u, titleH * u)
+            ctx.restore()
+            return
         }
+
+        const palettes = [
+            ["#00eaff", "#ff3bd4", "#eaffff"],
+            ["#aaff00", "#00e5a0", "#f4ffe7"],
+            ["#ff9d00", "#ff315f", "#fff2db"]
+        ]
+        const colors = palettes[style - 1]
+        const text = "ASCII AQUARIUM"
+        const x = ox + worldW * u * 0.5
+        const y = oy + (titleY + titleH * 0.5) * u
+        ctx.save()
+        ctx.font = "bold " + Math.max(1, Math.round(10 * u)) + "px " + fontFamily
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.lineJoin = "round"
+        ctx.globalAlpha = 0.16 * pulse
+        ctx.strokeStyle = colors[1]
+        ctx.lineWidth = 10 * u
+        ctx.strokeText(text, x + u, y)
+        ctx.globalAlpha = 0.28 * pulse
+        ctx.strokeStyle = colors[0]
+        ctx.lineWidth = 6 * u
+        ctx.strokeText(text, x, y)
+        ctx.globalAlpha = 0.88
+        ctx.strokeStyle = colors[0]
+        ctx.lineWidth = 1.5 * u
+        ctx.strokeText(text, x, y)
+        ctx.globalAlpha = 1
+        ctx.fillStyle = colors[2]
+        ctx.fillText(text, x, y)
+        ctx.restore()
     }
 
     Image {

@@ -168,8 +168,9 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
             continue;
         window->setScreen(screen);
         const QRect geometry = screen->geometry();
+        const QRect layoutGeometry = spanAquarium ? aquariumGeometry : geometry;
         const qreal aquariumScale = allScreenAquarium
-            ? std::max(geometry.width() / 320.0, geometry.height() / 240.0) : 1.0;
+            ? std::min(layoutGeometry.width() / 320.0, layoutGeometry.height() / 240.0) : 1.0;
         window->setProperty("aquariumSpanScreens", allScreenAquarium);
         window->setProperty("aquariumScale", aquariumScale);
         window->setProperty("aquariumScreenCount", allScreenAquarium ? aquariumScreenCount : 1);
@@ -290,8 +291,9 @@ void applyAquariumLayout(int direction)
         return;
     activeWindow->setScreen(screen);
     activeWindow->setProperty("aquariumSpanScreens", span);
+    const QRect layoutGeometry = span ? g_aquariumGeometry : screen->geometry();
     activeWindow->setProperty("aquariumScale",
-        std::max(screen->geometry().width() / 320.0, screen->geometry().height() / 240.0));
+        std::min(layoutGeometry.width() / 320.0, layoutGeometry.height() / 240.0));
     activeWindow->setProperty("aquariumScreenCount", span ? screenCount : 1);
     activeWindow->setProperty("aquariumCanCycleLayout", true);
     activeWindow->setGeometry(span ? g_aquariumGeometry : screen->geometry());
