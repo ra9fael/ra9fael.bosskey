@@ -111,6 +111,11 @@ bool CoverController::keyPressed(const QString& text, int key)
     return false;
 }
 
+void CoverController::cycleAquariumLayout(int direction)
+{
+    emit aquariumLayoutChangeRequested(direction < 0 ? -1 : 1);
+}
+
 void CoverController::tick()
 {
     const int ms = static_cast<int>(m_elapsed.elapsed());

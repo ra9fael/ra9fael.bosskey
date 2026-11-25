@@ -55,7 +55,8 @@ Rectangle {
     readonly property int originX: Math.floor((width - boardW) / 2)
     readonly property int originY: Math.floor((height - boardH) / 2)
 
-    // Tab cycles through the three aquarium overlays: none, neon title, clock.
+    // Single-screen Tab cycles through the aquarium overlays. In a multi-screen
+    // --all cover, BossCover routes Tab to the native layout cycler instead.
     property int effectMode: 0
 
     function cycleEffect() {

@@ -13,6 +13,7 @@ Window {
     property bool aquariumSpanScreens: false
     property real aquariumScale: 1
     property int aquariumScreenCount: 1
+    property bool aquariumCanCycleLayout: false
 
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     title: "WinShunBossKeyCover" // the verify scripts find it by this
@@ -68,16 +69,20 @@ Window {
     }
 
     // Keys cannot attach to a Window root ("is not an Item"), so a transparent
-    // item on top of the scene takes the focus and feeds the matcher. Nothing
-    // shows, whatever the boss sees you type.
+    // item on top of the scene takes the focus and feeds the matcher. Aquarium
+    // Tab is routed to the native layout cycler when multi-screen mode is on.
     Item {
         id: inputTarget
         anchors.fill: parent
         focus: true
         Keys.onPressed: (event) => {
             if (root.cover.scene === "aquarium" && event.key === Qt.Key_Tab) {
-                if (!event.isAutoRepeat && sceneLoader.status === Loader.Ready && sceneLoader.item)
-                    sceneLoader.item.cycleEffect()
+                if (!event.isAutoRepeat && sceneLoader.status === Loader.Ready && sceneLoader.item) {
+                    if (root.aquariumCanCycleLayout)
+                        root.cover.cycleAquariumLayout(event.modifiers & Qt.ShiftModifier ? -1 : 1)
+                    else
+                        sceneLoader.item.cycleEffect()
+                }
                 event.accepted = true
                 return
             }

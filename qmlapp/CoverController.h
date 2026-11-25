@@ -62,6 +62,7 @@ public:
     // A key press from the cover window (QML Keys). True when the sequence
     // completed and the cover must close.
     Q_INVOKABLE bool keyPressed(const QString& text, int key);
+    Q_INVOKABLE void cycleAquariumLayout(int direction);
 
 signals:
     void exitRequested();
@@ -72,6 +73,7 @@ signals:
     void percentChanged();
     void shownChanged();
     void tankChanged();
+    void aquariumLayoutChangeRequested(int direction);
 
 private:
     void tick();

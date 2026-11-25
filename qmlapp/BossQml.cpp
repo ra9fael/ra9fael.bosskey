@@ -36,8 +36,12 @@ CoverInput* g_input = nullptr;
 EnhancedInput* g_guard = nullptr;
 bool g_starting = false;
 std::vector<QQuickWindow*> g_windows; // one per screen, kept for reuse
+QList<QScreen*> g_aquariumScreens;
+QRect g_aquariumGeometry;
+int g_aquariumLayout = 0; // 0 spans every display; 1..N selects one display
 
 void guiHide();
+void applyAquariumLayout(int direction);
 
 QString appDir()
 {
@@ -51,6 +55,8 @@ QQmlEngine* ensureEngine()
     g_engine = new QQmlEngine;
     g_engine->addImportPath(appDir() + u"/qml"_s); // QtQuick: WinShun's
     g_controller = new CoverController;
+    QObject::connect(g_controller, &CoverController::aquariumLayoutChangeRequested,
+                     qGuiApp, [](int direction) { applyAquariumLayout(direction); });
     g_input = new CoverInput(qGuiApp);
     g_guard = new EnhancedInput(qGuiApp);
     QObject::connect(qGuiApp, &QCoreApplication::aboutToQuit, g_input, &CoverInput::stop);
@@ -132,6 +138,9 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
         && !spec.windowed && targets.size() > 1;
     const bool allScreenAquarium = spec.scene == "aquarium" && spec.allScreens
         && !spec.windowed;
+    g_aquariumScreens = allScreenAquarium ? QGuiApplication::screens() : QList<QScreen*>{};
+    g_aquariumGeometry = {};
+    g_aquariumLayout = 0;
     QScreen* aquariumScreen = nullptr;
     QRect aquariumGeometry;
     if (spanAquarium) {
@@ -139,6 +148,7 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
         for (QScreen* screen : targets)
             aquariumGeometry = aquariumGeometry.isNull()
                 ? screen->geometry() : aquariumGeometry.united(screen->geometry());
+        g_aquariumGeometry = aquariumGeometry;
         if (!aquariumScreen)
             aquariumScreen = targets.front();
         targets = {aquariumScreen};
@@ -163,6 +173,7 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
         window->setProperty("aquariumSpanScreens", allScreenAquarium);
         window->setProperty("aquariumScale", aquariumScale);
         window->setProperty("aquariumScreenCount", allScreenAquarium ? aquariumScreenCount : 1);
+        window->setProperty("aquariumCanCycleLayout", spanAquarium);
         QRect shown = geometry;
         if (spanAquarium) {
             shown = aquariumGeometry;
@@ -250,10 +261,54 @@ void guiHide()
         g_input->stop();
     for (QQuickWindow* window : g_windows) {
         window->unsetCursor();
+        window->setProperty("aquariumCanCycleLayout", false);
         window->hide();
     }
+    g_aquariumScreens.clear();
+    g_aquariumGeometry = {};
+    g_aquariumLayout = 0;
     if (g_controller)
         g_controller->stopCover();
+}
+
+void applyAquariumLayout(int direction)
+{
+    const int screenCount = g_aquariumScreens.size();
+    if (screenCount < 2 || g_aquariumGeometry.isNull() || !g_controller || !g_controller->shown())
+        return;
+
+    const int layoutCount = screenCount + 1;
+    g_aquariumLayout = (g_aquariumLayout + (direction < 0 ? layoutCount - 1 : 1)) % layoutCount;
+    const bool span = g_aquariumLayout == 0;
+    QScreen* screen = span ? QGuiApplication::primaryScreen()
+                           : g_aquariumScreens.at(g_aquariumLayout - 1);
+    if (!screen)
+        screen = g_aquariumScreens.front();
+
+    QQuickWindow* activeWindow = coverWindow(screen);
+    if (!activeWindow)
+        return;
+    activeWindow->setScreen(screen);
+    activeWindow->setProperty("aquariumSpanScreens", span);
+    activeWindow->setProperty("aquariumScale",
+        std::max(screen->geometry().width() / 320.0, screen->geometry().height() / 240.0));
+    activeWindow->setProperty("aquariumScreenCount", span ? screenCount : 1);
+    activeWindow->setProperty("aquariumCanCycleLayout", true);
+    activeWindow->setGeometry(span ? g_aquariumGeometry : screen->geometry());
+    activeWindow->setCursor(Qt::BlankCursor);
+    if (span)
+        activeWindow->show();
+    else
+        activeWindow->showFullScreen();
+    ws::win::bringToFront(activeWindow);
+    activeWindow->requestActivate();
+
+    for (QQuickWindow* window : g_windows) {
+        if (window != activeWindow) {
+            window->setProperty("aquariumCanCycleLayout", false);
+            window->hide();
+        }
+    }
 }
 
 } // namespace
