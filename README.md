@@ -18,6 +18,18 @@ WinShun 的结果列表里保持体面；全屏的部分不体面。
 | `boss bh` / `hd` | 全屏黑洞（不透明星空被引力透镜扭曲；吸积盘先铺开、黑洞随后长大，之后随机游走） |
 | `boss aq` / `szg` | 全屏 ASCII 水族馆 |
 
+<details>
+<summary>场景缩略图</summary>
+
+- [aquarium-2s.png](https://github.com/user-attachments/assets/e4805a1d-51fd-48d6-b07c-b9d0c8d2db20)
+- [blackhole-8s.png](https://github.com/user-attachments/assets/b8c8abe5-bdc8-41f9-976b-daf9984d778c)
+- [bsod-2s.png](https://github.com/user-attachments/assets/6293d9da-ac9e-4ad0-a6dd-2c3732fa8f84)
+- [gcc-2s.png](https://github.com/user-attachments/assets/c1255074-e2d7-4397-af1e-a4001a05e559)
+- [matrix-2s.png](https://github.com/user-attachments/assets/a6d91046-08be-4e9d-bf1b-d701e3704984)
+- [update-2s.png](https://github.com/user-attachments/assets/0178c9ed-2f1a-4a07-9aed-62cc057c0554)
+
+</details>
+
 回车启动伪装；设置里打开“请求 UAC 增强输入防护”后，每次先请求一次 UAC，允许则启用增强防护，关闭或拒绝则使用普通模式。默认触发词只保留英文缩写和拼音首字母（`boss bh` 等于 `boss hd`），搜索结果里每一行都列着这两个词；想增加其他词可在设置里改。顶层关键字支持中文别名 `摸鱼`（`摸鱼 bh` 同 `boss bh`）。
 
 `boss blackhole` 绘制不透明的程序化星空，不采集桌面、不最小化其他窗口。引力透镜弯曲星空，黑洞阴影保持纯黑。

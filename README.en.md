@@ -18,6 +18,18 @@ The result list stays presentable; the fullscreen part does not.
 | `boss bh` / `hd` | fullscreen black hole (an opaque star field bent into arcs; the disk spreads before the hole grows, then the hole wanders) |
 | `boss aq` / `szg` | fullscreen ASCII aquarium |
 
+<details>
+<summary>Scene thumbnails</summary>
+
+- [aquarium-2s.png](https://github.com/user-attachments/assets/e4805a1d-51fd-48d6-b07c-b9d0c8d2db20)
+- [blackhole-8s.png](https://github.com/user-attachments/assets/b8c8abe5-bdc8-41f9-976b-daf9984d778c)
+- [bsod-2s.png](https://github.com/user-attachments/assets/6293d9da-ac9e-4ad0-a6dd-2c3732fa8f84)
+- [gcc-2s.png](https://github.com/user-attachments/assets/c1255074-e2d7-4397-af1e-a4001a05e559)
+- [matrix-2s.png](https://github.com/user-attachments/assets/a6d91046-08be-4e9d-bf1b-d701e3704984)
+- [update-2s.png](https://github.com/user-attachments/assets/0178c9ed-2f1a-4a07-9aed-62cc057c0554)
+
+</details>
+
 Press Enter to start the cover; with "Request UAC input protection" enabled it asks for consent once and accepting selects enhanced protection, while leaving it off or declining selects ordinary mode. Type the exit key sequence to return. Defaults use an English abbreviation and pinyin initials (`boss bh` = `boss hd`); any other word can be bound in settings. The top-level keyword also has the Chinese alias `摸鱼`.
 
 `boss blackhole` paints an opaque procedural star field. It neither captures the desktop nor minimizes other windows. The lens bends the stars around a pure-black shadow.

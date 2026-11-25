@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-26
+
+### Added
+
+- Add folded scene thumbnail links to the Chinese and English README files without committing image assets.
+
+### Changed
+
+- Use short English and pinyin trigger aliases in the default scene map.
+
 ## [0.1.5] - 2026-11-25
 
 ### Added

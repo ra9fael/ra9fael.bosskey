@@ -6,7 +6,7 @@
     "zh": "老板键",
     "en": "Boss Key"
   },
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "boss 老板：一键全屏伪装：Windows 蓝屏 / Windows 更新 / gcc 编译现场 / 黑客帝国代码雨 / 黑洞吸积盘 / ASCII 水族馆；退出按键序列与自动消失时间可配置。",
   "author": "ra9fael",
   "license": "MIT",
