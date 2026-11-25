@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-25
+
+### Added
+
+- Add responsive ASCII aquarium rendering that fits the short screen dimension, extends the logical world across the long dimension, and preserves aquarium content on wide displays.
+- Add aquarium title presets with image and neon styles, vertical positions, and left/center/right horizontal placement controlled by Tab and arrow keys.
+
+### Fixed
+
+- Keep multi-screen aquarium layout cycling on Ctrl+Tab and Ctrl+Shift+Tab while preserving Tab and Shift+Tab for title controls.
+
 ## [0.1.4] - 2026-11-24
 
 ### Fixed
