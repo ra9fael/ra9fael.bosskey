@@ -127,6 +127,23 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
         return false;
     }
 
+    const int aquariumScreenCount = targets.size();
+    const bool spanAquarium = spec.scene == "aquarium" && spec.allScreens
+        && !spec.windowed && targets.size() > 1;
+    const bool allScreenAquarium = spec.scene == "aquarium" && spec.allScreens
+        && !spec.windowed;
+    QScreen* aquariumScreen = nullptr;
+    QRect aquariumGeometry;
+    if (spanAquarium) {
+        aquariumScreen = QGuiApplication::primaryScreen();
+        for (QScreen* screen : targets)
+            aquariumGeometry = aquariumGeometry.isNull()
+                ? screen->geometry() : aquariumGeometry.united(screen->geometry());
+        if (!aquariumScreen)
+            aquariumScreen = targets.front();
+        targets = {aquariumScreen};
+    }
+
     QString inputError;
     if (!enhanced && spec.nativeInput && !startOrdinary(inputError)) {
         guiHide();
@@ -141,8 +158,15 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
             continue;
         window->setScreen(screen);
         const QRect geometry = screen->geometry();
+        const qreal aquariumScale = allScreenAquarium
+            ? std::max(geometry.width() / 320.0, geometry.height() / 240.0) : 1.0;
+        window->setProperty("aquariumSpanScreens", allScreenAquarium);
+        window->setProperty("aquariumScale", aquariumScale);
+        window->setProperty("aquariumScreenCount", allScreenAquarium ? aquariumScreenCount : 1);
         QRect shown = geometry;
-        if (spec.windowed) {
+        if (spanAquarium) {
+            shown = aquariumGeometry;
+        } else if (spec.windowed) {
             // Keep preview windows responsive to the target screen while
             // preserving the aquarium's 4:3 world instead of hard-coding a
             // single aspect ratio and size.
@@ -152,7 +176,7 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
         }
         window->setGeometry(shown);
         window->setCursor(Qt::BlankCursor);
-        if (spec.windowed) {
+        if (spec.windowed || spanAquarium) {
             window->show();
         } else {
             window->showFullScreen();

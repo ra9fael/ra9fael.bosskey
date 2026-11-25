@@ -89,6 +89,8 @@ foreach(file IN LISTS bosskey_qml)
     get_filename_component(name "${file}" NAME)
     set_source_files_properties("${file}" PROPERTIES QT_RESOURCE_ALIAS "${name}")
 endforeach()
+set_source_files_properties(qmlapp/qml/assets/AquariumTitle.png
+    PROPERTIES QT_RESOURCE_ALIAS "AquariumTitle.png")
 set(qml_import_scan "")
 if(QT6_IS_SHARED_LIBS_BUILD)
     set(qml_import_scan NO_IMPORT_SCAN) # as WinShun's (src/app/CMakeLists.txt)
@@ -101,6 +103,7 @@ qt_add_qml_module(BossKeyApp
     ${qml_import_scan}
     NO_GENERATE_EXTRA_QMLDIRS
     QML_FILES ${bosskey_qml}
+    RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/assets/AquariumTitle.png"
 )
 # Bytecode only, no QML compiled to C++: the plugin runs on whichever Qt 6 its
 # WinShun comes with (see capture's CMakeLists).

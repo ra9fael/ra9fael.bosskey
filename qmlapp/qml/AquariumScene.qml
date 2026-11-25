@@ -17,25 +17,29 @@ Rectangle {
 
     required property var cover
     required property int screenIndex
+    property bool spanScreens: false
+    property real spanScale: 1
+    property int spanMonitorCount: 1
 
     // ---- the world ----------------------------------------------------------
-    readonly property int worldW: 320           // SCREEN_W
-    readonly property int worldH: 240           // SCREEN_H
+    readonly property int worldW: spanScreens ? Math.max(320, Math.ceil(width / p)) : 320
+    readonly property int worldH: spanScreens ? Math.max(240, Math.ceil(height / p)) : 240 // SCREEN_H
     readonly property int seaLevelY: worldH - 36 // SEA_LEVEL_Y
     readonly property int tickMs: 50            // the firmware's 20 fps
 
     // The firmware's pools and limits.
-    readonly property int poolFish: 48          // MAX_FISH_POOL
-    readonly property int maxFlakes: 16         // MAX_FLAKES
-    readonly property int maxBubbles: 50        // MAX_BUBBLES
-    readonly property int maxAutoFeed: 9        // AUTO_FEED_SPRINKLE_COUNT
-    readonly property int cthulhuPellets: 60    // CTHULHU_FEED_PELLET_THRESHOLD
+    readonly property int populationScale: spanScreens ? Math.max(1, spanMonitorCount) : 1
+    readonly property int poolFish: 48 * populationScale // MAX_FISH_POOL per display
+    readonly property int maxFlakes: 16 * populationScale
+    readonly property int maxBubbles: 50 * populationScale
+    readonly property int maxAutoFeed: 9 * populationScale
+    readonly property int cthulhuPellets: 60 * populationScale // CTHULHU_FEED_PELLET_THRESHOLD
 
     // Tank settings: the firmware's fish, bubbles and the pace of its clock.
     // The cover controller has clamped fish and bubbles; 1 is ordinary pace.
     readonly property var tank: cover.tank
-    property int fishTarget: tank.fish
-    property int bubbleTarget: tank.bubbles
+    property int fishTarget: tank.fish * populationScale
+    property int bubbleTarget: tank.bubbles * populationScale
     property real speed: Math.max(0.5, Math.min(2, tank.speed || 1))
 
     // ---- the screen ---------------------------------------------------------
@@ -43,7 +47,7 @@ Rectangle {
     // Scale until the 4:3 tank covers both dimensions. Fractional scaling is
     // intentional here: full-screen windows are not restricted to integer LCD
     // pixels, and cropping the long dimension avoids a black strip at the side.
-    readonly property real p: Math.max(width / worldW, height / worldH)
+    readonly property real p: spanScreens ? spanScale : Math.max(width / worldW, height / worldH)
     readonly property real boardW: worldW * p
     readonly property real boardH: worldH * p
     readonly property int cols: 1
@@ -51,6 +55,7 @@ Rectangle {
     readonly property int originX: Math.floor((width - boardW) / 2)
     readonly property int originY: Math.floor((height - boardH) / 2)
 
+    // Tab cycles through the three aquarium overlays: none, neon title, clock.
     property int effectMode: 0
 
     function cycleEffect() {
@@ -60,10 +65,9 @@ Rectangle {
 
     // One tank's state --------------------------------------------------------
     //
-    // Each board has its own clock, its own seeded random, its own fish, flakes,
-    // bubbles, visitors and seaweed. The fish and bubble counts come from the
-    // tank settings; the pace multiplies the clock, so a slow tank swims at
-    // the firmware's speeds slowed down, not at another firmware's.
+    // One continuous world owns the clock and all simulated creatures. The
+    // population scales with covered displays while each creature keeps the
+    // firmware's original movement speed.
 
     // A tank is a plain object; twelve fields per fish, thirty per visitor.
     property var nextSeed: 0x41515541 + (screenIndex + 1) * 7919
@@ -97,7 +101,7 @@ Rectangle {
             octopus: visitor(8), seahorse: visitor(24), snail: visitor(6),
             jellyfish: visitor(14),
             pellets: 0,
-            nextFeed: rand(r, 8, 14),
+            nextFeed: rand(r, 8, 14) / populationScale,
             sprinkle: false, sprinkleToRight: true, sprinkleLeft: 0, sprinkleNext: 0, sprinkleEvery: 0.2
         }
         for (let i = 0; i < poolFish; ++i)
@@ -504,7 +508,7 @@ Rectangle {
                 o.y = o.baseY
                 o.phase = rand(k.r, 0, 6.28318)
                 o.colorPhase = rand(k.r, 0, 6.28318)
-                o.nextSpawn = k.t + rand(k.r, 40, 120)
+                o.nextSpawn = k.t + rand(k.r, 40, 120) / populationScale
             }
             return
         }
@@ -528,7 +532,7 @@ Rectangle {
                 s.y = s.baseY
                 s.phase = rand(k.r, 0, 6.28318)
                 s.finPhase = rand(k.r, 0, 6.28318)
-                s.nextSpawn = k.t + rand(k.r, 60, 160)
+                s.nextSpawn = k.t + rand(k.r, 60, 160) / populationScale
             }
             return
         }
@@ -553,7 +557,7 @@ Rectangle {
                 s.baseY = worldH - 15
                 s.y = s.baseY
                 s.phase = rand(k.r, 0, 6.28318)
-                s.nextSpawn = k.t + rand(k.r, 90, 200)
+                s.nextSpawn = k.t + rand(k.r, 90, 200) / populationScale
             }
             return
         }
@@ -575,7 +579,7 @@ Rectangle {
                 j.y = j.baseY
                 j.vx = fromLeft ? rand(k.r, 2.2, 4) : -rand(k.r, 2.2, 4)
                 j.phase = rand(k.r, 0, 6.28318)
-                j.nextSpawn = k.t + rand(k.r, 70, 160)
+                j.nextSpawn = k.t + rand(k.r, 70, 160) / populationScale
             }
             return
         }
@@ -627,9 +631,11 @@ Rectangle {
     // DEFAULT_SEAWEED_LENGTH (1.35).
     function buildSeaweed(k) {
         k.seaweed = []
-        for (let i = 0; i < 12; ++i) {
+        const roots = 12 * Math.max(1, Math.ceil(worldW / 320))
+        for (let i = 0; i < roots; ++i) {
             const height = clamp(32 * 1.35 * (1 + 0.35 * Math.sin(i * 2.173 + 0.61)), 18, 72)
-            k.seaweed.push({ x: 10 + i * (worldW - 20) / 11, amp: 5 + (i % 4) * 2, height: height })
+            k.seaweed.push({ x: 10 + i * (worldW - 20) / Math.max(1, roots - 1),
+                             amp: 5 + (i % 4) * 2, height: height })
         }
     }
 
@@ -734,14 +740,15 @@ Rectangle {
             resizeTanks()
         const ctx = canvas.getContext("2d")
         ctx.reset()
+        ctx.globalCompositeOperation = "source-over"
+        ctx.globalAlpha = 1
         ctx.textBaseline = "alphabetic"
         const u = p
         const canvasWidth = canvas.width
         const canvasHeight = canvas.height
-        // The window: black past the tank's edge, as the firmware's clear is.
+        // Keep this foreground layer transparent so the physical-resolution
+        // background Canvas remains visible beneath the moving creatures.
         ctx.clearRect(0, 0, width, height)
-        ctx.fillStyle = "#000000"
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight)
         // Each board: its water and its tank on the board's grid, p by p. The
         // window shows the part of the board that falls inside it.
         for (let c = 0; c < cols; ++c) {
@@ -763,8 +770,6 @@ Rectangle {
     }
 
     function drawTank(ctx, k, ox, oy, u) {
-        drawWater(ctx, ox, oy, u)
-        drawNeonTitle(ctx, k, ox, oy, u)
         // Seaweed first: it is behind everything.
         for (let i = 0; i < k.seaweed.length; ++i)
             drawSeaweed(ctx, k, i, ox, oy, u)
@@ -781,47 +786,80 @@ Rectangle {
         drawSeahorse(ctx, k, ox, oy, u)
         drawSnail(ctx, k, ox, oy, u)
         drawJellyfish(ctx, k, ox, oy, u)
+        drawEffect(ctx, k, ox, oy, u)
+        if (effectMode === 2)
+            drawClock(ctx, ox, oy, u)
     }
 
+    function drawEffect(ctx, k, ox, oy, u) {
+        if (effectMode === 1)
+            drawNeonTitle(ctx, k, ox, oy, u)
+    }
+
+    // The source is a 320x240 title frame. Only its title band is drawn so the
+    // transparent canvas margins cannot make the effect dominate the tank.
     function drawNeonTitle(ctx, k, ox, oy, u) {
-        const palettes = [
-            ["#00eaff", "#ff3bd4", "#eaffff"],
-            ["#aaff00", "#00e5a0", "#f4ffe7"],
-            ["#ff9d00", "#ff315f", "#fff2db"]
-        ]
-        const colors = palettes[effectMode]
-        const text = "ASCII AQUARIUM"
-        const x = ox + worldW * u * 0.5
-        const y = oy + worldH * u * 0.52
-        const pulse = 0.82 + 0.18 * Math.sin(k.t * 2.2)
+        if (titleImage.status !== Image.Ready)
+            return
+        const sourceX = 10
+        const sourceY = 67
+        const sourceW = 310
+        const sourceH = 111
+        const titleW = 160
+        const titleH = 57
+        const titleX = (worldW - titleW) * 0.5
+        const titleY = 34
+        const pulse = 0.78 + 0.12 * Math.sin(k.t * 2.1)
 
         ctx.save()
-        ctx.font = "bold " + Math.max(1, Math.round(10 * u)) + "px " + fontFamily
-        ctx.textAlign = "center"
-        ctx.textBaseline = "middle"
-        ctx.lineJoin = "round"
-        if (effectMode === 2) {
-            ctx.fillStyle = "#b8ffff"
-            ctx.fillText(text, x, y)
-            ctx.restore()
-            return
-        }
-        ctx.globalAlpha = 0.16 * pulse
-        ctx.strokeStyle = colors[1]
-        ctx.lineWidth = 10 * u
-        ctx.strokeText(text, x + u, y)
-        ctx.globalAlpha = 0.28 * pulse
-        ctx.strokeStyle = colors[0]
-        ctx.lineWidth = 6 * u
-        ctx.strokeText(text, x, y)
-        ctx.globalAlpha = 0.88
-        ctx.strokeStyle = colors[0]
-        ctx.lineWidth = 1.5 * u
-        ctx.strokeText(text, x, y)
-        ctx.globalAlpha = 1
-        ctx.fillStyle = colors[2]
-        ctx.fillText(text, x, y)
+        ctx.globalAlpha = pulse
+        ctx.drawImage(titleImage, sourceX, sourceY, sourceW, sourceH,
+                       ox + titleX * u, oy + titleY * u, titleW * u, titleH * u)
         ctx.restore()
+    }
+
+    function twoDigits(value) {
+        return value < 10 ? "0" + value : String(value)
+    }
+
+    function drawClock(ctx, ox, oy, u) {
+        const now = new Date()
+        const time = twoDigits(now.getHours()) + ":" + twoDigits(now.getMinutes())
+                    + ":" + twoDigits(now.getSeconds())
+        const rows = 5
+        const gap = 1
+        let columns = 0
+        for (let i = 0; i < time.length; ++i)
+            columns += Tank.asciiClockWidth(time.charAt(i)) + (i ? gap : 0)
+        const startX = Math.max(0, Math.floor((worldW - columns * 6) * 0.5))
+        const startY = 82
+        const shadow = Tank.css565(Tank.rgb565(0, 4, 22))
+        const color = Tank.css565(Tank.rgb565(0, 20, 95))
+
+        for (let row = 0; row < rows; ++row) {
+            let x = startX
+            for (let i = 0; i < time.length; ++i) {
+                const glyph = Tank.asciiClockGlyphs[time.charAt(i)] || Tank.asciiClockGlyphs[" "]
+                const line = glyph[row] || ""
+                for (let col = 0; col < line.length; ++col) {
+                    if (line.charAt(col) !== " ") {
+                        glyphAt(ctx, x + col * 6 + 1, startY + row * 10 + 1,
+                                line.charAt(col), u, ox, oy, shadow)
+                        glyphAt(ctx, x + col * 6, startY + row * 10,
+                                line.charAt(col), u, ox, oy, color)
+                    }
+                }
+                x += (Tank.asciiClockWidth(time.charAt(i)) + gap) * 6
+            }
+        }
+    }
+
+    Image {
+        id: titleImage
+        source: "AquariumTitle.png"
+        sourceSize: Qt.size(320, 240)
+        visible: false
+        onStatusChanged: if (status === Image.Ready) root.paint()
     }
 
     // The firmware's font, at the tank's own cell: 6 by 8 pixels per glyph.
@@ -867,27 +905,44 @@ Rectangle {
         }
     }
 
-    // drawCachedTopGradientBackground: the water, as horizontal runs of one
-    // colour. Each row asks the gradient per 6-pixel cell, and the Bayer
-    // threshold steps every 4 pixels, so a run breaks only where the colour
-    // does: rows 0-79 hold a few dozen runs, rows 80-239 one black run each.
+    // Draw the gradient at final-pixel resolution. Fish remain on the original
+    // 320x240 grid, while the 4x4 Bayer cells stay physically small on a large
+    // desktop instead of scaling into visible color blocks.
     function drawWater(ctx, ox, oy, u) {
-        // Write the whole board first. The firmware's gradient ends at row 80,
-        // so the lower part is deliberately opaque black rather than transparent.
+        const pixelWidth = Math.max(1, Math.round(worldW * u))
+        const pixelHeight = Math.max(1, Math.round(worldH * u))
+        const gradientHeight = Math.max(2, Math.round(80 * u))
+        const cell = 4
         ctx.fillStyle = "#000000"
-        ctx.fillRect(ox, oy, worldW * u, worldH * u)
-        for (let y = 0; y < worldH; ++y) {
+        ctx.fillRect(ox, oy, pixelWidth, pixelHeight)
+        for (let y = 0; y < Math.min(pixelHeight, gradientHeight); y += cell) {
+            const h = Math.min(cell, gradientHeight - y)
             let x = 0
-            while (x < worldW) {
-                const color = Tank.waterAt(x, y)
-                let end = x + 1
-                while (end < worldW && Tank.waterAt(end, y) === color)
-                    ++end
+            while (x < pixelWidth) {
+                const color = Tank.waterAtPhysical(x, y, gradientHeight)
+                let end = x + cell
+                while (end < pixelWidth && Tank.waterAtPhysical(end, y, gradientHeight) === color)
+                    end += cell
                 ctx.fillStyle = Tank.css565(color)
-                ctx.fillRect(ox + x * u, oy + y * u, (end - x) * u, u)
+                ctx.fillRect(ox + x, oy + y, end - x, h)
                 x = end
             }
         }
+    }
+
+    function drawBackground() {
+        if (!backgroundCanvas.available)
+            return
+        const ctx = backgroundCanvas.getContext("2d")
+        ctx.reset()
+        ctx.globalCompositeOperation = "source-over"
+        ctx.globalAlpha = 1
+        drawWater(ctx, 0, 0, p)
+    }
+
+    function requestBackgroundDraw() {
+        if (backgroundCanvas.available && backgroundCanvas.width > 0 && backgroundCanvas.height > 0)
+            backgroundCanvas.requestPaint()
     }
 
     function drawSeaweed(ctx, k, i, ox, oy, u) {
@@ -1054,7 +1109,21 @@ Rectangle {
     // ---- the scene's plumbing ----------------------------------------------
 
     Canvas {
+        id: backgroundCanvas
+        z: 1
+        x: root.originX
+        y: root.originY
+        width: root.boardW
+        height: root.boardH
+        renderStrategy: Canvas.Immediate
+        antialiasing: false
+        onAvailableChanged: if (available) root.requestBackgroundDraw()
+        onPaint: root.drawBackground()
+    }
+
+    Canvas {
         id: canvas
+        z: 2
         x: root.originX
         y: root.originY
         width: root.boardW
@@ -1086,8 +1155,8 @@ Rectangle {
         onTriggered: root.step()
     }
 
-    onWidthChanged: paint()
-    onHeightChanged: paint()
+    onWidthChanged: { requestBackgroundDraw(); paint() }
+    onHeightChanged: { requestBackgroundDraw(); paint() }
 
     Component.onCompleted: {
         root.lastTick = Date.now()

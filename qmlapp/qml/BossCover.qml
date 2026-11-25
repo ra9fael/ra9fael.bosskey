@@ -10,6 +10,9 @@ Window {
     // properties to a Window root ("is not an Item"), a plain one it sets fine.
     property var cover
     property int screenIndex: 0
+    property bool aquariumSpanScreens: false
+    property real aquariumScale: 1
+    property int aquariumScreenCount: 1
 
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     title: "WinShunBossKeyCover" // the verify scripts find it by this
@@ -55,7 +58,13 @@ Window {
     }
     Component {
         id: aquariumScene
-        AquariumScene { cover: root.cover; screenIndex: root.screenIndex }
+        AquariumScene {
+            cover: root.cover
+            screenIndex: root.screenIndex
+            spanScreens: root.aquariumSpanScreens
+            spanScale: root.aquariumScale
+            spanMonitorCount: root.aquariumScreenCount
+        }
     }
 
     // Keys cannot attach to a Window root ("is not an Item"), so a transparent

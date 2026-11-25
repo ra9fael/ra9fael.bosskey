@@ -146,9 +146,9 @@ function randomDepth(random) {
     return 0.88 + random() * 0.12
 }
 
-// TFT_eSPI's water: GRADIENT_DITHER_ORDERED, scale 4, amplitude 28, over the
-// first 80 rows of RGB565(0, 8, 255) fading to black. The 8x8 Bayer threshold
-// nudges each 4x4 block's place in the ramp by up to 28 of 255.
+// TFT_eSPI's ordered, dithered RGB565 gradient: the complete blue channel fades
+// with green to black. Sampling, interpolation, and Bayer thresholds follow
+// the firmware's integer arithmetic so its characteristic pixel texture stays.
 var bayer8 = [
      0, 48, 12, 60,  3, 51, 15, 63,
     32, 16, 44, 28, 35, 19, 47, 31,
@@ -163,29 +163,96 @@ var gradientStops = [0, 18, 42, 74, 112, 156, 204, 232, 255]
 var gradientBrightness = [255, 228, 198, 164, 126, 90, 58, 30, 0]
 var gradientRows = 80
 var gradientTop = rgb565(0, 8, 255)
+var gradientColors = (function() {
+    var colors = []
+    var topGreen = channel6To8((gradientTop >> 5) & 0x3F)
+    var topBlue = color5To8(gradientTop & 0x1F)
+    for (var i = 0; i < gradientBrightness.length; ++i) {
+        var level = gradientBrightness[i]
+        colors.push(rgb565(0, (topGreen * level / 255) | 0, (topBlue * level / 255) | 0))
+    }
+    return colors
+})()
 
-function rampAt(t255) {
-    var s = 0
-    while (s < 8 && t255 > gradientStops[s])
-        ++s
-    if (s === 0)
-        return gradientBrightness[0]
-    var lo = gradientStops[s - 1]
-    var hi = gradientStops[s]
-    var blend = hi > lo ? Math.round((t255 - lo) * 255 / (hi - lo)) : 255
-    return Math.round((gradientBrightness[s - 1] * (255 - blend) + gradientBrightness[s] * blend) / 255)
+var asciiClockGlyphs = {
+    "0": ["  ___", " / _ \\", "| | | |", "| |_| |", " \\___/"],
+    "1": [" _", "/ |", "| |", "| |", "|_|"],
+    "2": [" ____", "|___ \\", "  __) |", " / __/", "|_____|"],
+    "3": [" _____", "|___ /", "  |_ \\", " ___) |", "|____/"],
+    "4": [" _  _", "| || |", "| || |_", "|__   _|", "   |_|"],
+    "5": [" ____", "| ___|", "|___ \\", " ___) |", "|____/"],
+    "6": ["  __", " / /_", "| '_ \\", "| (_) |", " \\___/"],
+    "7": [" _____", "|___  |", "   / /", "  / /", " /_/"],
+    "8": ["  ___", " ( _ )", " / _ \\", "| (_) |", " \\___/"],
+    "9": ["  ___", " / _ \\", "| (_) |", " \\__, |", "  /_/"],
+    ":": [" ", " _", "(_)", " _", "(_)"],
+    " ": [" ", " ", " ", " ", " "]
 }
 
-// One tank pixel of water, as the full RGB565 screen colour: the top colour
-// scaled to its dithered row's brightness, black past the gradient.
-function waterAt(x, y) {
-    if (y >= gradientRows)
+function asciiClockWidth(character) {
+    var glyph = asciiClockGlyphs[character] || asciiClockGlyphs[" "]
+    var width = 1
+    for (var i = 0; i < glyph.length; ++i)
+        width = Math.max(width, glyph[i].length)
+    return width
+}
+
+function color5To8(value) {
+    return (value << 3) | (value >> 2)
+}
+
+function channel6To8(value) {
+    return (value << 2) | (value >> 4)
+}
+
+function rgbAtGradientT(t255) {
+    t255 = Math.max(0, Math.min(255, t255))
+    var index = 0
+    while (index < gradientStops.length - 1 && t255 > gradientStops[index])
+        ++index
+    if (index === 0)
+        return gradientColors[0]
+    if (t255 >= gradientStops[gradientStops.length - 1])
+        return gradientColors[gradientColors.length - 1]
+    var t0 = gradientStops[index - 1]
+    var t1 = gradientStops[index]
+    var blend = ((t255 - t0) * 255 / (t1 - t0)) | 0
+    var inverse = 255 - blend
+    var c0 = gradientColors[index - 1]
+    var c1 = gradientColors[index]
+    var r0 = color5To8((c0 >> 11) & 0x1F)
+    var g0 = channel6To8((c0 >> 5) & 0x3F)
+    var b0 = color5To8(c0 & 0x1F)
+    var r1 = color5To8((c1 >> 11) & 0x1F)
+    var g1 = channel6To8((c1 >> 5) & 0x3F)
+    var b1 = color5To8(c1 & 0x1F)
+    var r = (r0 * inverse + r1 * blend) / 255 | 0
+    var g = (g0 * inverse + g1 * blend) / 255 | 0
+    var b = (b0 * inverse + b1 * blend) / 255 | 0
+    return rgb565(r, g, b)
+}
+
+// One tank pixel of the v2.39 background. The firmware samples every row,
+// then applies a scaled 8x8 Bayer threshold to the gradient coordinate.
+function waterAt(x, y, height) {
+    var rows = height || gradientRows
+    if (y >= rows)
         return 0
-    var sampleRow = Math.floor(y / 4) * 4
-    var base = Math.round(sampleRow * 255 / (gradientRows - 1))
+    var base = ((y * 255) / (rows - 1)) | 0
     var threshold = bayer8[(Math.floor(y / 4) & 7) * 8 + (Math.floor(x / 4) & 7)] << 2
-    var t = base + Math.round((threshold - 128) * 28 / 128)
-    t = t < 0 ? 0 : (t > 255 ? 255 : t)
-    var level = rampAt(t)
-    return rgb565(0, Math.round(8 * level / 255), 255)
+    var offset = ((threshold - 128) * 28 / 128) | 0
+    var t = Math.max(0, Math.min(255, base + offset))
+    return rgbAtGradientT(t)
+}
+
+// The desktop renderer keeps the firmware's gradient height in source-space,
+// but samples the ordered pattern in final pixels. This prevents a 4x4 Bayer
+// cell from becoming a large solid block when the 320x240 tank is enlarged.
+function waterAtPhysical(x, y, height) {
+    if (y >= height)
+        return 0
+    var base = ((y * 255) / (height - 1)) | 0
+    var threshold = bayer8[(((y / 4) | 0) & 7) * 8 + (((x / 4) | 0) & 7)] << 2
+    var offset = ((threshold - 128) * 28 / 128) | 0
+    return rgbAtGradientT(Math.max(0, Math.min(255, base + offset)))
 }
