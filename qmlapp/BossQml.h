@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "../logic.h"
 #include "CoverController.h"
 #include "EnhancedInput.h"
 
@@ -23,6 +24,7 @@ struct CoverSpec {
     bool zh = true;
     bool enhanced = false;    // host launches the separate consent helper
     bool nativeInput = true;  // preview can isolate the focused QML fallback
+    AquariumOptions tank;     // the ASCII aquarium's fish and bubbles
 };
 
 // Shows the cover (creates the windows on first use). False with an error.

@@ -74,7 +74,7 @@ set_source_files_properties(main.cpp qmlapp/qmlmain.cpp qmlapp/BossQml.cpp
 target_include_directories(BossKeyApp PRIVATE
     "${CMAKE_SOURCE_DIR}" "${app_dir}" "${app_dir}/platform" "${core_dir}")
 
-# The QML module URI BossKey: this plugin's four files only. The shared
+# The QML module URI BossKey: the plugin's own scenes only. The shared
 # WinShun controls are not used — a fake OS screen borrows nothing from them.
 set(bosskey_qml
     "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/BossCover.qml"
@@ -82,7 +82,9 @@ set(bosskey_qml
     "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/UpdateScene.qml"
     "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/GccScene.qml"
     "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/MatrixScene.qml"
-    "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/BlackholeScene.qml")
+    "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/BlackholeScene.qml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/AquariumScene.qml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/qmlapp/qml/Aquarium.js")
 foreach(file IN LISTS bosskey_qml)
     get_filename_component(name "${file}" NAME)
     set_source_files_properties("${file}" PROPERTIES QT_RESOURCE_ALIAS "${name}")

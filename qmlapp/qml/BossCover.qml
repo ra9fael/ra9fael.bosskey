@@ -13,10 +13,10 @@ Window {
 
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     title: "WinShunBossKeyCover" // the verify scripts find it by this
-    // Transparent window, opaque scenes: every scene paints its own fullscreen
-    // background (the black hole paints a dark sky), so nothing of the desktop
-    // shows through any of them.
-    color: "transparent"
+    // Keep the native surface opaque. Scenes still paint their own backgrounds,
+    // but an opaque window prevents stale desktop pixels during scene swaps and
+    // while the Canvas backing store is being updated.
+    color: "#000000"
 
     // No `visible:` line here: a QML binding re-asserted false over the C++
     // showFullScreen (the window was created fullscreen but stayed invisible).
@@ -29,6 +29,7 @@ Window {
                        : root.cover.scene === "update" ? updateScene
                        : root.cover.scene === "matrix" ? matrixScene
                        : root.cover.scene === "blackhole" ? blackholeScene
+                       : root.cover.scene === "aquarium" ? aquariumScene
                        : gccScene
     }
 
@@ -52,6 +53,10 @@ Window {
         id: blackholeScene
         BlackholeScene { cover: root.cover; screenIndex: root.screenIndex }
     }
+    Component {
+        id: aquariumScene
+        AquariumScene { cover: root.cover; screenIndex: root.screenIndex }
+    }
 
     // Keys cannot attach to a Window root ("is not an Item"), so a transparent
     // item on top of the scene takes the focus and feeds the matcher. Nothing
@@ -61,6 +66,12 @@ Window {
         anchors.fill: parent
         focus: true
         Keys.onPressed: (event) => {
+            if (root.cover.scene === "aquarium" && event.key === Qt.Key_Tab) {
+                if (!event.isAutoRepeat && sceneLoader.status === Loader.Ready && sceneLoader.item)
+                    sceneLoader.item.cycleEffect()
+                event.accepted = true
+                return
+            }
             if (root.cover.keyPressed(event.text, event.key))
                 event.accepted = true
         }

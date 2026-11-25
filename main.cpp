@@ -21,6 +21,7 @@ struct Settings {
     std::string gccProject = "winshun-core";
     bool allScreens = false;
     bool uacGuard = false;
+    bosskey::AquariumOptions tank;
 };
 
 Settings readSettings(const winshun::Json& s)
@@ -32,11 +33,7 @@ Settings readSettings(const winshun::Json& s)
             return v.toString();
         return fallback;
     };
-    st.map = bosskey::parseSceneMap(text(
-        "sceneMap",
-        "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,"
-        "gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,"
-        "blackhole=blackhole,heidong=blackhole,hd=blackhole"));
+    st.map = bosskey::parseSceneMapSetting(text("sceneMap", ""));
     st.exitSequence = bosskey::normalizeSequence(text("exitSequence", "deadbeef"));
     if (st.exitSequence.empty())
         st.exitSequence = "deadbeef";
@@ -50,6 +47,20 @@ Settings readSettings(const winshun::Json& s)
     st.gccProject = bosskey::trim(text("gccProject", "winshun-core"));
     st.allScreens = bosskey::lower(text("displayAll", "mouse")) == "all";
     st.uacGuard = s["uacGuard"].toBool();
+    const auto number = [&](const char* key, int fallback) {
+        const winshun::Json& v = s[key];
+        if (v.isNumber())
+            return static_cast<int>(v.toInt());
+        if (v.isString())
+            return std::atoi(v.toString().c_str());
+        return fallback;
+    };
+    st.tank.fish = bosskey::clampInt(number("tankFish", bosskey::kAquariumFishDefault),
+                                     bosskey::kAquariumFishMin, bosskey::kAquariumFishMax);
+    st.tank.bubbles = bosskey::clampInt(number("tankBubbles", bosskey::kAquariumBubblesDefault),
+                                        bosskey::kAquariumBubblesMin, bosskey::kAquariumBubblesMax);
+    st.tank.speed = bosskey::clampInt(number("tankSpeed", 100), bosskey::kTankSpeedMin,
+                                      bosskey::kTankSpeedMax) / 100.0;
     return st;
 }
 
@@ -71,6 +82,8 @@ std::string sceneTitle(bool zh, const std::string& scene)
         return tr(zh, "黑客帝国代码雨", "Matrix digital rain");
     if (scene == bosskey::kSceneBlackhole)
         return tr(zh, "黑洞吸积盘", "Black hole accretion disk");
+    if (scene == bosskey::kSceneAquarium)
+        return tr(zh, "ASCII 水族馆", "ASCII aquarium");
     return scene;
 }
 
@@ -97,6 +110,7 @@ winshun::Item makeSceneRow(bool zh,
                       : scene == bosskey::kSceneMatrix ? "#16A34A"
                       : scene == bosskey::kSceneGcc ? "#4EC9B0"
                       : scene == bosskey::kSceneUpdate ? "#2F6FED"
+                      : scene == bosskey::kSceneAquarium ? "#0EA5B7"
                       : "#0078D7";
     row.withIcon(std::string("color:") + color);
     row.withScore(100);
@@ -167,6 +181,7 @@ class BossKeyPlugin final : public winshun::Plugin {
         spec.allScreens = st.allScreens;
         spec.zh = zh;
         spec.enhanced = st.uacGuard;
+        spec.tank = st.tank;
         std::string error;
         bosskey::GuardLaunch launch;
         if (!bosskey::showCover(spec, error, &launch)) {

@@ -16,18 +16,19 @@
 
 namespace bosskey {
 
-// The three scenes. Their ids are stable: plugin.json's sceneMap default and
-// the QML loader both speak them.
+// The scenes. Their ids are stable: plugin.json's sceneMap default and the QML
+// loader both speak them.
 constexpr const char* kSceneBsod = "bsod";
 constexpr const char* kSceneUpdate = "update";
 constexpr const char* kSceneGcc = "gcc";
 constexpr const char* kSceneMatrix = "matrix";
 constexpr const char* kSceneBlackhole = "blackhole";
+constexpr const char* kSceneAquarium = "aquarium";
 
 inline bool isKnownScene(const std::string& scene)
 {
     return scene == kSceneBsod || scene == kSceneUpdate || scene == kSceneGcc
-        || scene == kSceneMatrix || scene == kSceneBlackhole;
+        || scene == kSceneMatrix || scene == kSceneBlackhole || scene == kSceneAquarium;
 }
 
 inline std::string lower(std::string s)
@@ -107,7 +108,27 @@ inline std::vector<SceneBinding> defaultSceneMap()
             {kSceneGcc, kSceneGcc}, {"bianyi", kSceneGcc}, {"by", kSceneGcc},
             {kSceneMatrix, kSceneMatrix}, {"daimayu", kSceneMatrix}, {"dmy", kSceneMatrix},
             {kSceneBlackhole, kSceneBlackhole}, {"heidong", kSceneBlackhole},
-            {"hd", kSceneBlackhole}};
+            {"hd", kSceneBlackhole},
+            {kSceneAquarium, kSceneAquarium}, {"shuizuguan", kSceneAquarium},
+            {"szg", kSceneAquarium}};
+}
+
+// The map the plugin saved before the aquarium scene existed. It is kept as
+// text, not recomputed, so a past version writes it exactly as it is here.
+inline const char* legacySceneMap() { return "bsod=bsod,lanping=bsod,lp=bsod,update=update,"
+    "gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,"
+    "dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole"; }
+
+// The map a saved `sceneMap` setting stands for: unset or blank is the default
+// map (one search word never goes silent); the pre-aquarium default is the old
+// default, not a custom map, so it upgrades instead of hiding the new scene;
+// anything else the user wrote is taken as written.
+inline std::vector<SceneBinding> parseSceneMapSetting(const std::string& text)
+{
+    const std::string value = trim(text);
+    if (value.empty() || value == legacySceneMap())
+        return defaultSceneMap();
+    return parseSceneMap(value);
 }
 
 // Every token bound to a scene, in map order; the first one is canonical.
@@ -122,7 +143,7 @@ inline std::vector<std::string> tokensForScene(const std::vector<SceneBinding>& 
 }
 
 // The map with one entry per scene (its first binding), which is what the
-// search listing shows: `boss ` lists five rows, not one per alias.
+// search listing shows: `boss ` lists six rows, not one per alias.
 inline std::vector<SceneBinding> canonicalBindings(const std::vector<SceneBinding>& map)
 {
     std::vector<SceneBinding> out;
@@ -146,6 +167,31 @@ inline std::string resolveScene(const std::vector<SceneBinding>& map, const std:
         if (b.token == token)
             return b.scene;
     return {};
+}
+
+// ---- the aquarium's tank ----------------------------------------------------
+
+// The ASCII aquarium was POWER-PILL/ASCII-Aquarium v2.39, an ESP32 firmware
+// drawing on a 320x240 LCD. Two of its settings are worth having here: how
+// crowded the tank is. The firmware's own ranges and defaults, as persisted.
+struct AquariumOptions {
+    int fish = 16;      // the firmware's DEFAULT_FISH, of its MAX_FISH 36
+    int bubbles = 10;   // the firmware's DEFAULT_BUBBLES, of its MAX_BUBBLES 50
+    double speed = 1.0; // the pace of its clock: 1.0 is the firmware's
+};
+
+constexpr int kAquariumFishMin = 1;
+constexpr int kAquariumFishMax = 36;
+constexpr int kAquariumFishDefault = 16;
+constexpr int kAquariumBubblesMin = 0;
+constexpr int kAquariumBubblesMax = 50;
+constexpr int kAquariumBubblesDefault = 10;
+constexpr int kTankSpeedMin = 50;    // percent of the firmware's clock
+constexpr int kTankSpeedMax = 200;
+
+inline int clampInt(int value, int lo, int hi)
+{
+    return value < lo ? lo : (value > hi ? hi : value);
 }
 
 // ---- the exit sequence ------------------------------------------------------

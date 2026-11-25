@@ -2,13 +2,19 @@
   "$schema": "https://raw.githubusercontent.com/LingCore/WinShun-plugins/main/schema/plugin.schema.json",
   "manifest": 1,
   "id": "ra9fael.bosskey",
-  "name": {"zh": "老板键", "en": "Boss Key"},
-  "version": "0.1.4",
-  "description": "boss 来了：一键全屏伪装成蓝屏 / Windows 更新 / gcc 编译现场 / 黑客帝国代码雨 / 黑洞；退出按键序列与自动消失时间可配置。",
+  "name": {
+    "zh": "老板键",
+    "en": "Boss Key"
+  },
+  "version": "0.1.5",
+  "description": "boss 老板：一键全屏伪装：Windows 蓝屏 / Windows 更新 / gcc 编译现场 / 黑客帝国代码雨 / 黑洞吸积盘 / ASCII 水族馆；退出按键序列与自动消失时间可配置。",
   "author": "ra9fael",
   "license": "MIT",
   "minWinShun": "0.22.0",
-  "permissions": ["ui", "processes"],
+  "permissions": [
+    "ui",
+    "processes"
+  ],
   "runtime": {
     "mode": "resident",
     "program": "bosskey.exe",
@@ -25,56 +31,150 @@
     {
       "key": "sceneMap",
       "type": "text",
-      "title": {"zh": "子触发词映射", "en": "Sub-trigger map"},
-      "hint": {"zh": "逗号分隔的 触发词=场景，场景为 bsod/update/gcc/matrix/blackhole；一个场景可以绑多个词（英文名、全拼、缩写都行，如 heidong=blackhole,hd=blackhole）", "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc/matrix/blackhole. A scene can answer to several words (its name, full pinyin, initials — e.g. heidong=blackhole,hd=blackhole)"},
-      "default": "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole"
+      "title": {
+        "zh": "子触发词映射",
+        "en": "Sub-trigger map"
+      },
+      "hint": {
+        "zh": "逗号分隔的 触发词=场景，场景为 bsod/update/gcc/matrix/blackhole/aquarium。一个场景可以绑定多个词（英文名、全拼、缩写，如 heidong=blackhole,hd=blackhole）",
+        "en": "Comma-separated token=scene pairs; scenes are bsod/update/gcc/matrix/blackhole/aquarium. A scene can answer to several words (its name, full pinyin, initials — e.g. heidong=blackhole,hd=blackhole)"
+      },
+      "default": "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,blackhole=blackhole,heidong=blackhole,hd=blackhole,aquarium=aquarium,shuizuguan=aquarium,szg=aquarium"
     },
     {
       "key": "exitSequence",
       "type": "text",
-      "title": {"zh": "退出按键序列", "en": "Exit key sequence"},
-      "hint": {"zh": "伪装界面下直接键入该序列即退出（不区分大小写）；留空用默认 deadbeef", "en": "Type this sequence on the cover to exit (case-insensitive); empty uses the default deadbeef"},
+      "title": {
+        "zh": "退出按键序列",
+        "en": "Exit key sequence"
+      },
+      "hint": {
+        "zh": "伪装界面下直接键入该序列即退出（不区分大小写）；留空用默认 deadbeef",
+        "en": "Type this sequence on the cover to exit (case-insensitive); empty uses the default deadbeef"
+      },
       "default": "deadbeef"
     },
     {
       "key": "autoHideSec",
       "type": "number",
-      "title": {"zh": "自动消失秒数", "en": "Auto-dismiss seconds"},
-      "hint": {"zh": "0 表示一直伪装到手动退出", "en": "0 keeps the cover until dismissed manually"},
+      "title": {
+        "zh": "自动消失秒数",
+        "en": "Auto-dismiss seconds"
+      },
+      "hint": {
+        "zh": "0 表示一直伪装到手动退出",
+        "en": "0 keeps the cover until dismissed manually"
+      },
       "default": 0
     },
     {
       "key": "gccProject",
       "type": "text",
-      "title": {"zh": "gcc 场景项目名", "en": "gcc scene project name"},
-      "hint": {"zh": "编译输出里显示的目标名", "en": "The target name shown in the build output"},
+      "title": {
+        "zh": "gcc 场景项目名",
+        "en": "gcc scene project name"
+      },
+      "hint": {
+        "zh": "编译输出里显示的目标名",
+        "en": "The target name shown in the build output"
+      },
       "default": "winshun-core"
     },
     {
       "key": "displayAll",
       "type": "choice",
-      "title": {"zh": "显示器覆盖", "en": "Display coverage"},
-      "hint": {"zh": "mouse=只盖鼠标所在的屏幕，all=盖住所有显示器", "en": "mouse=cover only the screen with the mouse, all=cover every display"},
+      "title": {
+        "zh": "显示器覆盖",
+        "en": "Display coverage"
+      },
+      "hint": {
+        "zh": "mouse=只盖鼠标所在的屏幕，all=盖住所有显示器",
+        "en": "mouse=cover only the screen with the mouse, all=cover every display"
+      },
       "default": "mouse",
-      "options": ["mouse", "all"]
+      "options": [
+        "mouse",
+        "all"
+      ]
     },
     {
       "key": "uacGuard",
       "type": "bool",
-      "title": {"zh": "请求 UAC 增强输入防护", "en": "Request UAC input protection"},
-      "hint": {"zh": "开：每次启动伪装先请求一次 UAC，允许后失焦也能拦截退出序列；关：不弹 UAC，只在封面有焦点时拦截按键", "en": "On: request UAC once per cover start; after consent the exit sequence is matched even without focus. Off: no UAC prompt; keys are suppressed only while the cover has focus."},
+      "title": {
+        "zh": "请求 UAC 增强输入防护",
+        "en": "Request UAC input protection"
+      },
+      "hint": {
+        "zh": "开：每次启动伪装先请求一次 UAC，允许后失焦也能拦截退出序列；关：不弹 UAC，只在封面有焦点时拦截按键",
+        "en": "On: request UAC once per cover start; after consent the exit sequence is matched even without focus. Off: no UAC prompt; keys are suppressed only while the cover has focus."
+      },
       "default": false
+    },
+    {
+      "key": "tankFish",
+      "type": "number",
+      "title": {
+        "zh": "水族馆：鱼的条数",
+        "en": "Aquarium: fish"
+      },
+      "hint": {
+        "zh": "1–36，同原固件的设置，默认 16",
+        "en": "1–36, as the original firmware's setting; default 16"
+      },
+      "default": 16
+    },
+    {
+      "key": "tankBubbles",
+      "type": "number",
+      "title": {
+        "zh": "水族馆：气泡的数量",
+        "en": "Aquarium: bubbles"
+      },
+      "hint": {
+        "zh": "0–50，默认 10",
+        "en": "0–50; default 10"
+      },
+      "default": 10
+    },
+    {
+      "key": "tankSpeed",
+      "type": "number",
+      "title": {
+        "zh": "水族馆：流速百分比",
+        "en": "Aquarium: pace %"
+      },
+      "hint": {
+        "zh": "50–200，默认 100 即原固件的速度",
+        "en": "50–200; 100 is the original firmware's pace"
+      },
+      "default": 100
     }
   ],
   "commands": [
     {
       "id": "cover",
-      "keyword": ["boss", "摸鱼"],
-      "title": {"zh": "老板键伪装", "en": "Boss cover"},
+      "keyword": [
+        "boss",
+        "摸鱼"
+      ],
+      "title": {
+        "zh": "老板键伪装",
+        "en": "Boss cover"
+      },
       "icon": "glyph:U+ED1A",
-      "hint": {"zh": "bsod/lanping/lp 蓝屏 · update/gengxin/gx 更新 · gcc/bianyi/by 编译 · matrix/daimayu/dmy 代码雨 · blackhole/heidong/hd 黑洞；Enter 全屏伪装，键入退出序列返回", "en": "bsod/lanping/lp bluescreen · update/gengxin/gx Windows Update · gcc/bianyi/by build · matrix/daimayu/dmy Matrix rain · blackhole/heidong/hd black hole; Enter covers the screen, type the exit sequence to return"},
+      "hint": {
+        "zh": "bsod/lanping/lp 蓝屏 · update/gengxin/gx 系统更新 · gcc/bianyi/by gcc 编译 · matrix/daimayu/dmy 代码雨 · blackhole/heidong/hd 黑洞 · aquarium/shuizuguan/szg 水族馆；Enter 全屏伪装，输入退出序列返回",
+        "en": "bsod/lanping/lp bluescreen · update/gengxin/gx Windows Update · gcc/bianyi/by build · matrix/daimayu/dmy Matrix rain · blackhole/heidong/hd black hole · aquarium/shuizuguan/szg ASCII aquarium; Enter covers the screen, type the exit sequence to return"
+      },
       "actions": [
-        {"id": "cover", "title": {"zh": "全屏伪装", "en": "Cover the screen"}, "key": "Enter"}
+        {
+          "id": "cover",
+          "title": {
+            "zh": "全屏伪装",
+            "en": "Cover the screen"
+          },
+          "key": "Enter"
+        }
       ]
     }
   ]

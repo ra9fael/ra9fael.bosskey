@@ -6,7 +6,8 @@
 // requests here (qmlapp/BossQml.cpp). The cover windows are precreated hidden,
 // so a show is only showFullScreen + raise.
 //
-// winshunBossKeyPreview: `bosskey.exe --cover bsod|update|gcc [--all]
+// winshunBossKeyPreview: `bosskey.exe --cover bsod|update|gcc|matrix|blackhole
+// |aquarium [--fish <n>] [--bubbles <n>] [--pace <percent>] [--all]
 // [--windowed] [--screen <index>] [--autohide <sec>] [--en]
 // [--app-dir <folder>]` opens the cover directly, no WinShun and no protocol.
 // --windowed shows a small window; --screen selects its screen index (0-based).
@@ -167,6 +168,21 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
         }
         if (arg == u"--en" || arg == u"--all" || arg == u"--windowed" || arg == u"--app-dir")
             continue;
+        if (arg == u"--fish" && i + 1 < args.size()) {
+            spec.tank.fish = bosskey::clampInt(args.at(++i).toInt(), bosskey::kAquariumFishMin,
+                                               bosskey::kAquariumFishMax);
+            continue;
+        }
+        if (arg == u"--bubbles" && i + 1 < args.size()) {
+            spec.tank.bubbles = bosskey::clampInt(args.at(++i).toInt(), bosskey::kAquariumBubblesMin,
+                                                  bosskey::kAquariumBubblesMax);
+            continue;
+        }
+        if (arg == u"--pace" && i + 1 < args.size()) {
+            spec.tank.speed = bosskey::clampInt(args.at(++i).toInt(), bosskey::kTankSpeedMin,
+                                                bosskey::kTankSpeedMax) / 100.0;
+            continue;
+        }
         if (arg == u"--screen" && i + 1 < args.size()) {
             spec.previewScreen = args.at(++i).toInt();
             continue;
@@ -190,7 +206,7 @@ extern "C" __declspec(dllexport) int winshunBossKeyPreview(const wchar_t* appDir
         return 2;
     }
     if (!bosskey::isKnownScene(spec.scene)) {
-        std::fprintf(stderr, "bosskey: --cover needs bsod | update | gcc | matrix | blackhole\n");
+        std::fprintf(stderr, "bosskey: --cover needs bsod | update | gcc | matrix | blackhole | aquarium\n");
         std::fflush(stderr);
         return 2;
     }

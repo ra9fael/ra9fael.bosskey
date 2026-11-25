@@ -48,6 +48,13 @@ void CoverController::applySpec(const CoverSpec& spec)
         emit zhChanged();
     }
     m_autoHideSec = spec.autoHideSec;
+    if (spec.tank.fish != m_tankFish || spec.tank.bubbles != m_tankBubbles
+        || spec.tank.speed != m_tankSpeed) {
+        m_tankFish = spec.tank.fish;
+        m_tankBubbles = spec.tank.bubbles;
+        m_tankSpeed = spec.tank.speed;
+        emit tankChanged();
+    }
 
     m_buffer.clear();
     m_percent = 0;

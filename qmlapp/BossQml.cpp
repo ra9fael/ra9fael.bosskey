@@ -20,6 +20,7 @@
 
 #include "platform/WindowEffects.h"
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -140,8 +141,15 @@ bool guiShowReady(const CoverSpec& spec, bool enhanced, std::string& error)
             continue;
         window->setScreen(screen);
         const QRect geometry = screen->geometry();
-        const QRect shown = spec.windowed
-            ? QRect(geometry.x(), geometry.y(), 480, 270) : geometry;
+        QRect shown = geometry;
+        if (spec.windowed) {
+            // Keep preview windows responsive to the target screen while
+            // preserving the aquarium's 4:3 world instead of hard-coding a
+            // single aspect ratio and size.
+            const int previewWidth = std::min(640, std::max(320, geometry.width() * 2 / 5));
+            const int previewHeight = std::max(240, previewWidth * 3 / 4);
+            shown = QRect(geometry.x(), geometry.y(), previewWidth, previewHeight);
+        }
         window->setGeometry(shown);
         window->setCursor(Qt::BlankCursor);
         if (spec.windowed) {

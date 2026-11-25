@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QStringList>
 #include <QTimer>
+#include <QVariantMap>
 #include <string>
 
 #include "GccModel.h"
@@ -27,6 +28,9 @@ class CoverController final : public QObject {
     Q_PROPERTY(bool shown READ shown NOTIFY shownChanged)
     Q_PROPERTY(QStringList qrRows READ qrRows CONSTANT)
     Q_PROPERTY(GccModel* gccModel READ gccModel CONSTANT)
+    // The ASCII aquarium: its fish, its bubbles, and the pace of its clock.
+    // Read as one object by the scene; the plugin's settings supply all three.
+    Q_PROPERTY(QVariantMap tank READ tank NOTIFY tankChanged)
 public:
     explicit CoverController(QObject* parent = nullptr);
 
@@ -40,6 +44,14 @@ public:
     // scanning it opens the stopcode page the cover names.
     QStringList qrRows() const { return m_qrRows; }
     GccModel* gccModel() const { return m_gcc; }
+    QVariantMap tank() const
+    {
+        QVariantMap map;
+        map[QStringLiteral("fish")] = m_tankFish;
+        map[QStringLiteral("bubbles")] = m_tankBubbles;
+        map[QStringLiteral("speed")] = m_tankSpeed;
+        return map;
+    }
 
     // Applies the spec (before the windows show); regenerates the gcc log.
     void applySpec(const CoverSpec& spec);
@@ -59,6 +71,7 @@ signals:
     void zhChanged();
     void percentChanged();
     void shownChanged();
+    void tankChanged();
 
 private:
     void tick();
@@ -72,6 +85,9 @@ private:
     bool m_shown = false;
     std::string m_buffer; // the rolling key buffer (logic.h's pushKey)
     QStringList m_qrRows;
+    int m_tankFish = 16;
+    int m_tankBubbles = 10;
+    double m_tankSpeed = 1.0;
     GccModel* m_gcc = nullptr;
     QTimer m_percentTimer;
     QTimer m_autoHideTimer;

@@ -1,6 +1,7 @@
-// test_logic.cpp - the pure logic of Boss Key (logic.h): the scene map, the
-// exit-sequence matcher, the percent pacing, the gcc log; and the QR encoder
-// (qrcode.h). No Qt, no windows.
+// test_logic.cpp - the pure logic of Boss Key (logic.h): the scene map and its
+// saved-setting upgrade, the aquarium's bounds and its clock, the exit-sequence
+// matcher, the percent pacing, the gcc log; and the QR encoder (qrcode.h). No
+// Qt, no windows.
 #include "logic.h"
 #include "qrcode.h"
 
@@ -67,7 +68,7 @@ void testSceneMap()
     // The default map binds three words per scene: its name, the full pinyin and
     // the pinyin initials.
     const auto def = bosskey::defaultSceneMap();
-    expect(def.size() == 15, "default map: three words per scene");
+    expect(def.size() == 18, "default map: three words per scene");
     expectEq(bosskey::resolveScene(def, "bsod"), bosskey::kSceneBsod, "resolve: bsod");
     expectEq(bosskey::resolveScene(def, "lanping"), bosskey::kSceneBsod, "resolve: full pinyin");
     expectEq(bosskey::resolveScene(def, "lp"), bosskey::kSceneBsod, "resolve: pinyin initials");
@@ -80,12 +81,19 @@ void testSceneMap()
     expectEq(bosskey::resolveScene(def, "heidong"), bosskey::kSceneBlackhole,
              "resolve: heidong");
     expectEq(bosskey::resolveScene(def, "hd"), bosskey::kSceneBlackhole, "resolve: hd");
+    expectEq(bosskey::resolveScene(def, "aquarium"), bosskey::kSceneAquarium,
+             "resolve: aquarium");
+    expectEq(bosskey::resolveScene(def, "shuizuguan"), bosskey::kSceneAquarium,
+             "resolve: the aquarium's full pinyin");
+    expectEq(bosskey::resolveScene(def, "szg"), bosskey::kSceneAquarium,
+             "resolve: the aquarium's initials");
     expect(bosskey::isKnownScene(bosskey::kSceneMatrix), "scene: matrix is known");
     expect(bosskey::isKnownScene(bosskey::kSceneBlackhole), "scene: blackhole is known");
+    expect(bosskey::isKnownScene(bosskey::kSceneAquarium), "scene: aquarium is known");
     expectEq(bosskey::resolveScene(def, "h"), "", "resolve: a lone h is not bound");
     const auto allScenes = bosskey::parseSceneMap(
-        "bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole");
-    expect(allScenes.size() == 5, "map: all five full names parse");
+        "bsod=bsod,update=update,gcc=gcc,matrix=matrix,blackhole=blackhole,aquarium=aquarium");
+    expect(allScenes.size() == 6, "map: all six full names parse");
     expectEq(bosskey::resolveScene(def, "x"), "", "resolve: unbound token");
     expectEq(bosskey::resolveScene(def, ""), "", "resolve: empty word");
     expectEq(bosskey::resolveScene(def, "bsod bsod"), "", "resolve: two words refused");
@@ -95,15 +103,73 @@ void testSceneMap()
     // The listing collapses the aliases: one row per scene, and the row names
     // every word that reaches it.
     const auto canonical = bosskey::canonicalBindings(def);
-    expect(canonical.size() == 5, "canonical: one binding per scene");
+    expect(canonical.size() == 6, "canonical: one binding per scene");
     expectEq(canonical[0].token, "bsod", "canonical: the first binding wins");
-    expectEq(canonical[4].scene, bosskey::kSceneBlackhole, "canonical: blackhole last");
+    expectEq(canonical[4].scene, bosskey::kSceneBlackhole, "canonical: blackhole fifth");
+    expectEq(canonical[5].scene, bosskey::kSceneAquarium, "canonical: aquarium last");
     const auto holes = bosskey::tokensForScene(def, bosskey::kSceneBlackhole);
     expect(holes.size() == 3, "tokens: three words for blackhole");
     expectEq(holes[0], "blackhole", "tokens: the name comes first");
     expectEq(holes[1], "heidong", "tokens: then the full pinyin");
     expectEq(holes[2], "hd", "tokens: then the initials");
     expect(bosskey::tokensForScene(def, "update").size() == 3, "tokens: update has three");
+    const auto tank = bosskey::tokensForScene(def, bosskey::kSceneAquarium);
+    expect(tank.size() == 3 && tank[0] == "aquarium" && tank[2] == "szg",
+           "tokens: aquarium has its three words");
+}
+
+// ---- the saved scene map: the pre-aquarium default upgrades ------------------
+
+void testSceneMapSetting()
+{
+    // What 0.1.4 wrote for every install that never touched the setting, word
+    // for word, with the text this build reads that as the old default by.
+    const auto previous = bosskey::parseSceneMapSetting("");
+    expect(previous.size() == 18, "setting: unset is the default map");
+    expectEq(bosskey::legacySceneMap(),
+             "bsod=bsod,lanping=bsod,lp=bsod,update=update,gengxin=update,gx=update,"
+             "gcc=gcc,bianyi=gcc,by=gcc,matrix=matrix,daimayu=matrix,dmy=matrix,"
+             "blackhole=blackhole,heidong=blackhole,hd=blackhole",
+             "setting: the old default is the one 0.1.4 saved");
+    const auto upgraded = bosskey::parseSceneMapSetting(bosskey::legacySceneMap());
+    expectEq(bosskey::resolveScene(upgraded, "szg"), bosskey::kSceneAquarium,
+             "setting: the old default gains the aquarium scene");
+    expect(upgraded.size() == bosskey::defaultSceneMap().size(),
+           "setting: the upgrade is exactly the current default");
+
+    // A map the user wrote stays theirs, aquarium or not.
+    const auto custom = bosskey::parseSceneMapSetting("b=bsod,h=blackhole");
+    expect(custom.size() == 2, "setting: a custom map is kept");
+    expectEq(bosskey::resolveScene(custom, "szg"), "", "setting: a custom map is not extended");
+    expectEq(bosskey::resolveScene(custom, "b"), bosskey::kSceneBsod, "setting: its own words work");
+
+    // A blank setting is the default too: one search word is never silent.
+    expect(bosskey::parseSceneMapSetting("  \n ").size() == 18, "setting: blank is the default");
+}
+
+// ---- the aquarium: its bounds and the pace of its clock ----------------------
+
+void testAquarium()
+{
+    expect(bosskey::AquariumOptions{}.fish == bosskey::kAquariumFishDefault
+               && bosskey::AquariumOptions{}.bubbles == bosskey::kAquariumBubblesDefault
+               && bosskey::AquariumOptions{}.speed == 1.0,
+           "aquarium: the defaults are the firmware's");
+    expect(bosskey::kAquariumFishMin == 1 && bosskey::kAquariumFishMax == 36,
+           "aquarium: the firmware's fish range");
+    expect(bosskey::kAquariumBubblesMin == 0 && bosskey::kAquariumBubblesMax == 50,
+           "aquarium: the firmware's bubble range");
+    expect(bosskey::clampInt(0, bosskey::kAquariumFishMin, bosskey::kAquariumFishMax) == 1,
+           "aquarium: no fish below one");
+    expect(bosskey::clampInt(500, bosskey::kAquariumFishMin, bosskey::kAquariumFishMax) == 36,
+           "aquarium: no more than 36 fish");
+    expect(bosskey::clampInt(24, bosskey::kAquariumFishMin, bosskey::kAquariumFishMax) == 24,
+           "aquarium: a value in range is untouched");
+    expect(bosskey::clampInt(-3, bosskey::kAquariumBubblesMin, bosskey::kAquariumBubblesMax) == 0,
+           "aquarium: no bubbles below none");
+    expect(bosskey::clampInt(10, bosskey::kTankSpeedMin, bosskey::kTankSpeedMax) == 50
+               && bosskey::clampInt(900, bosskey::kTankSpeedMin, bosskey::kTankSpeedMax) == 200,
+           "aquarium: the pace stays between half and double");
 }
 
 // ---- the exit sequence -------------------------------------------------------
@@ -318,6 +384,8 @@ void testQr()
 int main()
 {
     testSceneMap();
+    testSceneMapSetting();
+    testAquarium();
     testSequence();
     testPercent();
     testGccLog();
