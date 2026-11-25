@@ -59,10 +59,30 @@ Rectangle {
     readonly property int titleStyleCount: 4
     readonly property int titlePositionCount: 3
     readonly property int titleModeCount: 1 + titleStyleCount * titlePositionCount
+    property int titleHorizontalPosition: 1
 
     function cycleEffect(direction) {
         titleMode = (titleMode + (direction < 0 ? titleModeCount - 1 : 1)) % titleModeCount
         paint()
+    }
+
+    function moveTitleHorizontally(direction) {
+        titleHorizontalPosition = clamp(titleHorizontalPosition + (direction < 0 ? -1 : 1), 0, 2)
+        paint()
+    }
+
+    function titleCenterX() {
+        if (titleHorizontalPosition === 0) {
+            const leftFraction = spanScreens && spanMonitorCount > 1
+                    ? 1 / (2 * spanMonitorCount) : 0.30
+            return worldW * leftFraction
+        }
+        if (titleHorizontalPosition === 2) {
+            const rightFraction = spanScreens && spanMonitorCount > 1
+                    ? 1 - 1 / (2 * spanMonitorCount) : 0.70
+            return worldW * rightFraction
+        }
+        return worldW * 0.5
     }
 
     // One tank's state --------------------------------------------------------
@@ -810,7 +830,7 @@ Rectangle {
             const sourceW = 310
             const sourceH = 111
             const titleW = 160
-            const titleX = (worldW - titleW) * 0.5
+            const titleX = titleCenterX() - titleW * 0.5
             ctx.save()
             ctx.globalAlpha = pulse
             ctx.drawImage(titleImage, sourceX, sourceY, sourceW, sourceH,
@@ -826,7 +846,7 @@ Rectangle {
         ]
         const colors = palettes[style - 1]
         const text = "ASCII AQUARIUM"
-        const x = ox + worldW * u * 0.5
+        const x = ox + titleCenterX() * u
         const y = oy + (titleY + titleH * 0.5) * u
         ctx.save()
         ctx.font = "bold " + Math.max(1, Math.round(10 * u)) + "px " + fontFamily

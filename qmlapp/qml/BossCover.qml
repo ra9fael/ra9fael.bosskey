@@ -76,6 +76,13 @@ Window {
         focus: true
         Keys.onPressed: (event) => {
             if (root.cover.scene === "aquarium"
+                    && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
+                if (!event.isAutoRepeat && sceneLoader.status === Loader.Ready && sceneLoader.item)
+                    sceneLoader.item.moveTitleHorizontally(event.key === Qt.Key_Left ? -1 : 1)
+                event.accepted = true
+                return
+            }
+            if (root.cover.scene === "aquarium"
                     && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab)) {
                 if (!event.isAutoRepeat && sceneLoader.status === Loader.Ready && sceneLoader.item) {
                     const reverse = event.key === Qt.Key_Backtab
